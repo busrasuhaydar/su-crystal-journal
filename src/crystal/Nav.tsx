@@ -177,7 +177,7 @@ export function Dock() {
   const inIndex = !items.some((n) => isActive(loc.pathname, n)) && NAV.some((n) => isActive(loc.pathname, n));
   return (
     <>
-      <nav className="cr-dock" data-glass="dock" aria-label="Alt menü"
+      <nav className="cr-dock" aria-label="Alt menü"
         onTouchStart={(e) => { y0.current = e.touches[0].clientY; }}
         onTouchEnd={(e) => { if (y0.current != null && y0.current - e.changedTouches[0].clientY > 40) setSheet('index'); y0.current = null; }}>
         {cell(items[0])}{cell(items[1])}

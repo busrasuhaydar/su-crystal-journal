@@ -64,7 +64,6 @@ a { color: var(--pink-d); }
 .no-gl .cb-book { background: linear-gradient(150deg, rgba(255,255,255,.45), rgba(255,220,240,.25)); box-shadow: inset 0 0 0 2px rgba(255,255,255,.9), inset 0 0 40px rgba(255,255,255,.5), 0 30px 60px -30px rgba(140,30,100,.6); }
 .no-gl .cb-left, .no-gl .cb-right { background: linear-gradient(160deg, rgba(255,250,253,.86), rgba(255,240,248,.72)); box-shadow: inset 0 1px 0 #fff, 0 10px 30px -18px rgba(140,30,100,.45); }
 .no-gl .cb-spine { background: linear-gradient(90deg, rgba(255,255,255,.5), rgba(255,255,255,.9), rgba(255,255,255,.5)); }
-.no-gl .cr-dock { background: rgba(255,248,252,.9); box-shadow: inset 0 1px 0 #fff, 0 14px 30px -14px rgba(140,30,100,.5); }
 .no-gl .cr-hero { background: linear-gradient(120deg, rgba(255,250,253,.9), rgba(255,214,236,.65) 55%, rgba(205,184,247,.6)); }
 
 /* ══ Sol sayfa ══ */
@@ -243,6 +242,10 @@ a { color: var(--pink-d); }
 .cr-dock { display: none; }
 @media (max-width: 760px) {
   .cr-dock { position: fixed; z-index: 30; left: 14px; right: 14px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); height: 70px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; padding: 0 6px; border-radius: 30px; }
+  .cr-dock { background: linear-gradient(165deg, rgba(255,255,255,.72), rgba(255,236,247,.55) 55%, rgba(238,226,255,.62));
+    backdrop-filter: blur(18px) saturate(1.7) brightness(1.04); -webkit-backdrop-filter: blur(18px) saturate(1.7) brightness(1.04);
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.98), inset 0 -2px 0 rgba(255,255,255,.5), inset 0 0 0 1px rgba(255,255,255,.75), inset 7px 0 16px -10px rgba(60,220,230,.85), inset -7px 0 16px -10px rgba(255,80,170,.8), inset 0 -10px 18px -12px rgba(200,140,230,.55), 0 18px 34px -14px rgba(140,30,100,.55), 0 0 0 1px rgba(255,255,255,.35); }
+  .cr-dock::before { content: ""; position: absolute; left: 12%; right: 12%; top: 1px; height: 40%; border-radius: 30px 30px 50% 50%; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,.75), rgba(255,255,255,0)); }
   .cr-dock a, .cr-dock > button { position: relative; display: grid; justify-items: center; align-content: center; gap: 2px; height: 100%; border: 0; background: none; padding: 0; color: var(--ink-700); text-decoration: none; font: 600 10.5px var(--f-sans); cursor: pointer; transition: transform .2s var(--ease); }
   .cr-dock .ic { display: grid; place-items: center; width: 44px; height: 30px; border-radius: 16px; transition: background .3s var(--ease), color .2s; }
   .cr-dock .tx { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
