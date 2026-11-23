@@ -49,13 +49,20 @@ a { color: var(--pink-d); }
 .cb-left::-webkit-scrollbar { display: none; }
 .cb-right { border-radius: 12px 26px 26px 12px; display: flex; flex-direction: column; overflow: hidden; }
 .cb-spine { position: relative; margin: 26px 2px; border-radius: 14px; display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; z-index: 2; }
-.cb-spine i { position: relative; display: block; width: 46px; height: 14px; border-radius: 9px; flex: none;
-  /* gerçek krom: gökyüzü yansıması, keskin ufuk çizgisi, zemin yansıması + silindir gölgesi */
-  background:
-    linear-gradient(90deg, rgba(18,26,44,.55) 0, rgba(18,26,44,0) 16%, rgba(18,26,44,0) 84%, rgba(18,26,44,.5) 100%),
-    linear-gradient(180deg, #FFFFFF 0%, #E8F0FA 14%, #A9B7CA 34%, #4A5468 47%, #151B27 52%, #5D6A80 58%, #C4CFDD 74%, #F2E6F7 88%, #FFFFFF 93%, #8F9DB2 100%);
-  box-shadow: 0 0 0 1px rgba(30,40,62,.65), inset 0 1px 0 #fff, inset 0 -1px 0 rgba(30,40,62,.4), 0 5px 8px -1px rgba(70,40,110,.45); }
-.cb-spine i::after { content: ""; position: absolute; left: 10%; right: 40%; top: 2px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, #fff 25%, #fff 75%, transparent); }
+.cb-spine i { position: relative; display: block; width: 48px; height: 11px; border-radius: 6px; flex: none; background-color: #9AA8BD;
+  /* gerçek krom halka: ufuk çizgisi + sahne yansıması (arkaplan görseli yatayda esnetilmiş) + silindir uç gölgesi */
+  background-image:
+    linear-gradient(90deg, rgba(8,14,28,.72) 0, rgba(8,14,28,.1) 12%, rgba(8,14,28,0) 22%, rgba(8,14,28,0) 78%, rgba(8,14,28,.1) 88%, rgba(8,14,28,.7) 100%),
+    linear-gradient(180deg, rgba(255,255,255,.98) 0, rgba(255,255,255,.55) 14%, rgba(255,255,255,0) 30%, rgba(8,14,28,.18) 40%, rgba(8,14,28,.78) 49%, rgba(8,14,28,.92) 54%, rgba(8,14,28,.25) 63%, rgba(255,255,255,0) 72%, rgba(255,235,250,.6) 88%, rgba(255,255,255,.95) 95%, rgba(8,14,28,.35) 100%),
+    linear-gradient(180deg, rgba(214,226,242,.62), rgba(170,186,210,.55)),
+    url('/arkaplan.webp');
+  background-size: 100% 100%, 100% 100%, 100% 100%, 420px 90px; background-position: 0 0, 0 0, 0 0, 78% 38%;
+  box-shadow: 0 0 0 .6px rgba(14,22,40,.8), inset 0 .5px 0 rgba(255,255,255,.9), 0 5px 5px -2px rgba(58,18,86,.5), 0 9px 12px -4px rgba(58,18,86,.28); }
+/* sayfadaki delik: halkanın girdiği yerde koyu gölge */
+.cb-spine i::before { content: ""; position: absolute; left: -7px; right: -7px; top: -3px; bottom: -8px; z-index: -1; border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 58%, rgba(52,12,70,.5) 0, rgba(52,12,70,.22) 45%, rgba(52,12,70,0) 72%); }
+/* üst keskin ışık çizgisi */
+.cb-spine i::after { content: ""; position: absolute; left: 12%; right: 34%; top: 1.5px; height: 1.6px; border-radius: 2px; background: linear-gradient(90deg, transparent, #fff 20%, #fff 80%, transparent); opacity: .95; }
 .cb-top { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 22px 0 26px; flex: none; position: relative; z-index: 3; }
 .cb-top-brand { display: none; font-family: var(--f-script); font-size: 26px; line-height: 1; text-decoration: none; color: var(--rose-ink); }
 .cb-scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(212,42,134,.35) transparent; }
@@ -339,8 +346,24 @@ a { color: var(--pink-d); }
 /* ══ Süsler ══ */
 .cr-decor { position: fixed; inset: 0; z-index: 20; pointer-events: none; overflow: hidden; contain: layout paint; }
 .cr-edges { position: absolute; border-radius: 6px; opacity: .9; }
-.cr-edges.r { right: 22px; top: 52px; bottom: 58px; width: 14px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.95) 0 1.5px, rgba(240,200,230,.6) 1.5px 3.5px); box-shadow: 2px 0 8px rgba(160,60,140,.25); border-radius: 0 8px 8px 0; }
-.cr-edges.b { left: 52px; right: 60px; bottom: 12px; height: 10px; background: repeating-linear-gradient(180deg, rgba(255,255,255,.95) 0 1.5px, rgba(240,200,230,.6) 1.5px 3.5px); border-radius: 0 0 8px 8px; box-shadow: 0 2px 8px rgba(160,60,140,.25); }
+.cr-edges { filter: drop-shadow(1px 2px 3px rgba(80,30,80,.35)); }
+/* gerçek kâğıt yığını: düzensiz ince yaprak çizgileri + dışa doğru gölge + uçlarda sıkışma; hafif sıcak krem */
+.cr-edges.r { right: 21px; top: 54px; bottom: 60px; width: 15px; border-radius: 1px 9px 9px 1px; opacity: 1;
+  background:
+    linear-gradient(180deg, rgba(90,50,60,.38) 0, rgba(90,50,60,0) 7%, rgba(90,50,60,0) 93%, rgba(90,50,60,.42) 100%),
+    linear-gradient(90deg, rgba(255,255,255,.35) 0, rgba(255,255,255,0) 18%, rgba(120,70,80,.0) 55%, rgba(120,70,80,.34) 100%),
+    repeating-linear-gradient(90deg, rgba(120,80,80,.34) 0 .7px, transparent .7px 2.3px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.9) 0 .6px, transparent .6px 3.1px),
+    repeating-linear-gradient(90deg, rgba(140,100,95,.22) 0 .5px, transparent .5px 1.7px),
+    #FBF3EA; }
+.cr-edges.b { left: 54px; right: 62px; bottom: 11px; height: 12px; border-radius: 1px 1px 9px 9px; opacity: 1;
+  background:
+    linear-gradient(90deg, rgba(90,50,60,.38) 0, rgba(90,50,60,0) 5%, rgba(90,50,60,0) 95%, rgba(90,50,60,.42) 100%),
+    linear-gradient(180deg, rgba(255,255,255,.35) 0, rgba(255,255,255,0) 18%, rgba(120,70,80,.34) 100%),
+    repeating-linear-gradient(180deg, rgba(120,80,80,.34) 0 .7px, transparent .7px 2.3px),
+    repeating-linear-gradient(180deg, rgba(255,255,255,.9) 0 .6px, transparent .6px 3.1px),
+    repeating-linear-gradient(180deg, rgba(140,100,95,.22) 0 .5px, transparent .5px 1.7px),
+    #FBF3EA; }
 .cr-pendant { position: absolute; left: 30px; top: 0; width: 34px; transform-origin: 50% 0; animation: cr-swing 5.5s ease-in-out infinite alternate; filter: drop-shadow(0 6px 8px rgba(150,80,200,.35)); }
 @keyframes cr-swing { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
 .cr-clasp { position: absolute; right: 6px; top: 50%; width: 38px; margin-top: -36px; filter: drop-shadow(0 6px 8px rgba(40,50,90,.45)); }

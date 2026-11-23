@@ -44,7 +44,7 @@ const Clasp = () => (
     <path d="M36 30 H52 Q62 30 62 42 V78 Q62 90 52 90 H36Z" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth="1.2" /><path d="M36 30 H52 Q62 30 62 42 V78 Q62 90 52 90 H36Z" fill="url(#cr-chrome-sh)" /><path d="M40 34 H51 Q58 34 58 42" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" fill="none" opacity=".85" />
     <circle cx="48" cy="56" r="8" fill="#DCE5F1" stroke="#2A3346" strokeWidth="1" /><circle cx="48" cy="56" r="6.2" fill="#10151F" /><path d="M48 60 L44.5 76 H51.5Z" fill="#10151F" /><path d="M43 52 A6.5 6.5 0 0 1 49 49.8" stroke="#fff" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity=".7" />
     <path d="M8 22 V98" stroke="#fff" strokeWidth="2" opacity=".55" strokeLinecap="round" />
-    <circle cx="19" cy="38" r="5" fill="url(#cr-crystal)" stroke="#fff" /><circle cx="19" cy="82" r="5" fill="url(#cr-crystal)" stroke="#fff" />
+    <rect x="3.6" y="17.6" width="30.8" height="84.8" rx="8.6" fill="none" stroke="#fff" strokeWidth=".9" opacity=".55" /><circle cx="19" cy="36" r="4.6" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth=".9" /><path d="M16.3 37.3 L21.7 34.7" stroke="#1B2230" strokeWidth="1.1" strokeLinecap="round" /><ellipse cx="17.6" cy="34.2" rx="1.6" ry=".9" fill="#fff" opacity=".9" /><circle cx="19" cy="84" r="4.6" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth=".9" /><path d="M16.8 82.2 L21.2 85.8" stroke="#1B2230" strokeWidth="1.1" strokeLinecap="round" /><ellipse cx="17.6" cy="82.2" rx="1.6" ry=".9" fill="#fff" opacity=".9" />
     <path d="M19 52 l3 6 -3 6 -3 -6Z" fill="#fff" opacity=".9" />
   </svg>
 );
