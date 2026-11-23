@@ -3,11 +3,14 @@
 // Arkaplan: public/arkaplan.webp bir kez dokuya yüklenir ("cover"; mobilde şatoya odaklı). Cam geçişi ≤30 fps (mobilde 24),
 // sekme gizliyken durur, "hareketi azalt" ve sade modda yalnızca değişiklik olunca tek kare çizilir. WebGL2 yoksa html.no-gl → CSS cam + CSS arkaplan.
 import { GLASS, MAX_SLABS, VERT } from './shaders';
+import { getPref } from '../lib/prefs';
 
 // Görselde şatonun yeri (0..1, sol üst köken): gövde x 0.67–0.95, taban y≈0.62
-const CASTLE = { x: 0.78, base: 0.62 };
+const CASTLE0 = { x: 0.78, base: 0.62 };
+let CASTLE = CASTLE0;
+let custom = false;
 /** Dar (dikey) ekranda görselin şato tarafına, geniş ekranda ortasına odaklan. CSS yedeği de aynı değeri kullanır (--bg-x). */
-const focusX = (va: number) => { const t = Math.min(Math.max((va - 0.5) / 1.2, 0), 1); return 0.5 + 0.32 * (1 - t * t * (3 - 2 * t)); };
+const focusX = (va: number) => { if (custom) return 0.5; const t = Math.min(Math.max((va - 0.5) / 1.2, 0), 1); return 0.5 + 0.32 * (1 - t * t * (3 - 2 * t)); };
 
 type Kind = { r: number; bevel: number; frost: number; milk: number; thick: number; shadow: number; rim: number; irid: number };
 const KINDS: Record<string, Kind> = {
@@ -26,6 +29,10 @@ export const crystal = {
 };
 
 let wake = () => {};
+let loadBg: (url: string | null) => void = () => {};
+let pendingBg: string | null | undefined;
+/** Arkaplan görselini değiştir (null = varsayılan şato). Sahne kurulmadan çağrılırsa bekletilir. */
+export function setBackground(url: string | null) { pendingBg = url; loadBg(url); }
 let poke = () => {};
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string) {
@@ -85,12 +92,14 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   }
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.6 : 1.5);
-    W = Math.round(innerWidth * dpr); H = Math.round(innerHeight * dpr);
-    if (canvas.width !== W) canvas.width = W;
-    if (canvas.height !== H) canvas.height = H;
-    // dokunmatikte adres çubuğu kayarken innerHeight değişir: görsel ölçeği en büyük yüksekliğe sabitlenir (zıplama/titreme olmaz)
+    // dokunmatikte adres çubuğu kayarken innerHeight değişir: tuval ve görsel ölçeği en büyük yüksekliğe sabitlenir
+    // (tuval yeniden boyutlanmaz, silinmez → zıplama/titreme/glitch olmaz)
     viewH = coarse && innerWidth === lastW ? Math.max(viewH, innerHeight) : innerHeight;
     lastW = innerWidth;
+    W = Math.round(innerWidth * dpr); H = Math.round(viewH * dpr);
+    if (canvas.width !== W) canvas.width = W;
+    if (canvas.height !== H) canvas.height = H;
+    canvas.style.height = `${viewH}px`;
     mobile = innerWidth < 761 ? 1 : 0;
     setFocus(); layout();
   }
@@ -108,8 +117,22 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     g.generateMipmap(g.TEXTURE_2D);
     loaded = true; layout(); wake();
   };
-  image.onerror = () => { document.documentElement.classList.replace('gl', 'no-gl'); };
-  image.src = `${import.meta.env.BASE_URL}arkaplan.webp`;
+  image.onerror = () => { if (custom) { loadBg(null); return; } document.documentElement.classList.replace('gl', 'no-gl'); };
+  const DEF = `${import.meta.env.BASE_URL}arkaplan.webp`;
+  let curBg = '';
+  loadBg = (url) => {
+    const want = url || DEF;
+    if (want === curBg) return;
+    curBg = want; custom = !!url; CASTLE = custom ? { x: 0.5, base: 0.66 } : CASTLE0;
+    const root = document.documentElement;
+    root.classList.toggle('has-bg', custom);
+    if (custom) root.style.setProperty('--bg-img', `url("${want}")`); else root.style.removeProperty('--bg-img');
+    image.crossOrigin = custom ? 'anonymous' : null;
+    image.src = want; setFocus();
+  };
+  if (pendingBg !== undefined) loadBg(pendingBg);
+  else if (getPref('bgCustom', '0') === '1') setTimeout(() => { if (!curBg) loadBg(null); }, 3500);
+  else loadBg(null);
 
   // ışık: fareyi yumuşakça izler; dokunmatikte yavaşça döner
   const light = { x: innerWidth * 0.25, y: -80, tx: innerWidth * 0.25, ty: -80 };
@@ -126,6 +149,8 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
       if (n >= MAX_SLABS) break;
       const k = KINDS[el.dataset.glass!];
       if (!k) continue;
+      // dokunmatikte kayan içerikteki cam (ör. ana sayfa penceresi) CSS ile çizilir: iOS kaydırması JS'ten önde gider, WebGL levha titrerdi
+      if (coarse && el.closest('.cb-scroll')) { if (!el.classList.contains('css-glass')) el.classList.add('css-glass'); continue; }
       const b = el.getBoundingClientRect();
       if (b.width < 2 || b.height < 2 || !el.getClientRects().length) continue;
       const css = getComputedStyle(el);

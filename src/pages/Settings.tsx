@@ -1,7 +1,9 @@
 import { REMINDER_OPTIONS } from '../lib/types';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarHeart, FolderHeart, Files, CalendarDays, Download, RotateCcw } from 'lucide-react';
+import { CalendarHeart, FolderHeart, Files, CalendarDays, Download, RotateCcw, ImagePlus, Trash2, UserRound } from 'lucide-react';
+import { useLookUpload, useLookUrl } from '../crystal/look';
+import { glassTap } from '../crystal/sound';
 import { PageHead } from '../components/Shell';
 import { Field, useToast } from '../components/ui';
 import { useProfile, useSocialAccounts, useUpdateProfile } from '../lib/data';
@@ -59,6 +61,7 @@ export default function SettingsPage() {
         <p className="small muted" style={{ marginBottom: 0 }}>Saat dilimi: Europe/Istanbul · Tarih biçimi: Türkçe</p>
       </section>
 
+      <LookSettings />
       <HomeSettings />
       <PrefSettings />
 
@@ -218,6 +221,7 @@ function PrefSettings() {
   const [city, setCity] = useState(() => getPref('city', 'bursa'));
   const [simple, setSimple] = useState(() => getPref('simple', '0') === '1');
   const [defRem, setDefRem] = useState(() => getPref('defaultReminder', ''));
+  const [sound, setSound] = useState(() => getPref('sound', '1') !== '0');
   return (
     <section className="glass panel">
       <div className="panel-head"><h2>Görünüm ve tercihler</h2><span className="small muted">Bu cihaza özel</span></div>
@@ -231,6 +235,12 @@ function PrefSettings() {
           <label className="row small" style={{ cursor: 'pointer', minHeight: 42 }}>
             <input type="checkbox" checked={simple} onChange={(e) => { setSimple(e.target.checked); setPref('simple', e.target.checked ? '1' : '0'); applySimple(); }} />
             Sade mod (cam bulanıklığını kapat, daha hızlı)
+          </label>
+        </Field>
+        <Field label="Sesler">
+          <label className="row small" style={{ cursor: 'pointer', minHeight: 42 }}>
+            <input type="checkbox" checked={sound} onChange={(e) => { setSound(e.target.checked); setPref('sound', e.target.checked ? '1' : '0'); if (e.target.checked) glassTap(1.2); }} />
+            Dokunuşta kristal cam sesi, sayfa çevirirken kâğıt sesi
           </label>
         </Field>
         <Field label="Yeni görevlerde varsayılan hatırlatıcı">
@@ -267,8 +277,50 @@ function HomeSettings() {
         ))}
         <label className="row small" style={{ cursor: 'pointer' }}>
           <input type="checkbox" checked={hp.boston} onChange={(e) => save({ boston: e.target.checked })} />
-          🇺🇸 Ana sayfada küçük Boston saati göster
+          🇺🇸 Ana sayfada küçük ABD saati göster
         </label>
+      </div>
+    </section>
+  );
+}
+
+/** Profil fotoğrafı (ana sayfa düğmesinde görünür) ve arkaplan görseli (her ekrana otomatik oturur). Hesapla eşitlenir. */
+function LookSettings() {
+  const upload = useLookUpload();
+  const avatar = useLookUrl('avatar');
+  const bg = useLookUrl('bg');
+  const toast = useToast();
+  const [busy, setBusy] = useState('');
+  async function run(kind: 'avatar' | 'bg', f: File | null) {
+    if (f && !f.type.startsWith('image/')) return toast.fail(new Error('Lütfen bir görsel seç'));
+    setBusy(kind);
+    try { await upload(kind, f); toast.ok(f ? (kind === 'avatar' ? 'Profil fotoğrafı güncellendi ✦' : 'Arkaplan güncellendi ✦') : 'Varsayılana dönüldü'); }
+    catch (x) { toast.fail(x); }
+    setBusy('');
+  }
+  const pick = (kind: 'avatar' | 'bg') => (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0] ?? null; e.target.value = ''; if (f) run(kind, f); };
+  return (
+    <section className="glass panel">
+      <div className="panel-head"><h2>Kişiselleştir</h2><span className="small muted">Tüm cihazlarda</span></div>
+      <div className="look-grid">
+        <div className="look-it">
+          <div className="look-ava">{avatar ? <img src={avatar} alt="Profil fotoğrafı" /> : <UserRound size={34} strokeWidth={1.5} />}</div>
+          <div className="look-txt"><b>Profil fotoğrafı</b><span className="small muted">Ana sayfa düğmesinde görünür.</span>
+            <div className="row" style={{ gap: 6 }}>
+              <label className="btn btn-primary btn-sm"><ImagePlus size={14} />{busy === 'avatar' ? 'Yükleniyor…' : 'Fotoğraf seç'}<input type="file" accept="image/*" hidden onChange={pick('avatar')} disabled={!!busy} /></label>
+              {avatar && <button type="button" className="btn btn-glass btn-sm icon-only" aria-label="Profil fotoğrafını kaldır" title="Kaldır" disabled={!!busy} onClick={() => run('avatar', null)}><Trash2 size={14} /></button>}
+            </div>
+          </div>
+        </div>
+        <div className="look-it">
+          <div className="look-bg" style={bg ? { backgroundImage: `url("${bg}")` } : undefined} />
+          <div className="look-txt"><b>Arkaplan görseli</b><span className="small muted">Telefonda ve bilgisayarda ekrana otomatik oturur.</span>
+            <div className="row" style={{ gap: 6 }}>
+              <label className="btn btn-primary btn-sm"><ImagePlus size={14} />{busy === 'bg' ? 'Yükleniyor…' : 'Görsel seç'}<input type="file" accept="image/*" hidden onChange={pick('bg')} disabled={!!busy} /></label>
+              {bg && <button type="button" className="btn btn-glass btn-sm" disabled={!!busy} onClick={() => run('bg', null)}><RotateCcw size={14} />Şatoya dön</button>}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

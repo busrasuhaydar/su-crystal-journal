@@ -1,3 +1,4 @@
+import { installSounds } from './crystal/sound';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
@@ -8,6 +9,11 @@ import { useEffect, useRef } from 'react';
 import { startCrystal } from './crystal/scene';
 import { installPageTurn } from './crystal/pageTurn';
 installPageTurn();
+installSounds();
+// sayfa yakınlaştırması kapalı (arkaplan tuvali bozulmasın); eser görüntüleyicinin kendi profesyonel yakınlaştırması var
+const pinchOk = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.('.zs');
+document.addEventListener('gesturestart', (e) => { if (!pinchOk(e.target)) e.preventDefault(); });
+document.addEventListener('touchmove', (e) => { if (e.touches.length > 1 && !pinchOk(e.target)) e.preventDefault(); }, { passive: false });
 import { queryClient, useRealtime, useSession } from './lib/data';
 import { ToastProvider } from './components/ui';
 import { EditorProvider } from './components/Editors';

@@ -155,3 +155,67 @@ export function claspUrl(): string {
   ctx.beginPath(); ctx.moveTo((kx - 2.2) * S, (ky + 3) * S); ctx.lineTo((kx - 4) * S, (ky + 19) * S); ctx.lineTo((kx + 4) * S, (ky + 19) * S); ctx.lineTo((kx + 2.2) * S, (ky + 3) * S); ctx.fill();
   return (clasp = out.toDataURL('image/png'));
 }
+
+let arch: string | null = null;
+/** Şato penceresi çerçevesi: kemerli krom boru (dış kalın + iç ince boncuk), tepede kilit taşı mücevheri,
+ *  kemer başlangıçlarında krom küreler, altta pervaz. 120×160 birim; iç pencere sınırı d = T (çerçeve kalınlığı). */
+export const ARCH = { W: 120, H: 160, T: 10 };
+export function archUrl(): string {
+  if (arch) return arch;
+  const { W, H, T } = ARCH, K = 4;
+  const out = canvas(W * K, H * K), ctx = out.getContext('2d')!;
+  const img = ctx.createImageData(W * K, H * K), px = img.data;
+  const R = W / 2, cx = W / 2;
+  // kemerin içine doğru işaretli uzaklık ve iç yön (gradyan)
+  const sdf = (x: number, y: number): [number, number, number] => {
+    if (y < R) { const dx = x - cx, dy = y - R, l = Math.hypot(dx, dy) || 1; return [R - l, -dx / l, -dy / l]; }
+    const a = x, b = W - x, c = H - y;
+    if (a <= b && a <= c) return [a, 1, 0];
+    if (b <= c) return [b, -1, 0];
+    return [c, 0, -1];
+  };
+  const put = (i: number, c: RGB, a: number) => { px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; px[i + 3] = Math.round(clamp(a) * 255); };
+  const spheres: [number, number, number][] = [[2.2, R, 5.2], [W - 2.2, R, 5.2], [cx, 1.5, 0]]; // kemer başları
+  for (let j = 0; j < H * K; j++) for (let i = 0; i < W * K; i++) {
+    const x = (i + 0.5) / K, y = (j + 0.5) / K, o = (j * W * K + i) * 4;
+    let col: RGB | null = null, al = 0;
+    // küreler
+    for (const [sx, sy, sr] of spheres) {
+      if (!sr) continue;
+      const dx = (x - sx) / sr, dy = (y - sy) / sr, q = dx * dx + dy * dy;
+      if (q < 1) { col = chromeAt(dx, dy, Math.sqrt(1 - q)); al = clamp((1 - Math.sqrt(q)) * sr * K * 0.5); }
+    }
+    // kilit taşı: tepede eşkenar dörtgen mücevher (pembe kristal + krom kenar)
+    if (!col) {
+      const kx = Math.abs(x - cx) / 7, ky = Math.abs(y - (T * 0.55)) / 9, m = kx + ky;
+      if (m < 1) {
+        const nx = Math.sign(x - cx) * 0.7, ny = Math.sign(y - T * 0.55) * 0.55;
+        if (m > 0.8) col = chromeAt(nx, ny, 0.5);
+        else { const g = chromeAt(nx * 0.6, ny * 0.6, 1); col = [clamp(g[0] * 0.55 + 255 * 0.45, 0, 255), clamp(g[1] * 0.35 + 70, 0, 255), clamp(g[2] * 0.45 + 150, 0, 255)]; }
+        al = clamp((1 - m) * 9 * K);
+      }
+    }
+    if (!col) {
+      const [d, gx, gy] = sdf(x, y);
+      if (d >= -0.2 && d <= T) {
+        const outer = T * 0.68;
+        let s: number, w: number;
+        if (d <= outer) { s = (d - outer / 2) / (outer / 2); w = outer; }           // kalın dış boru
+        else if (d >= outer + 0.5) { const a = outer + 0.5; s = (d - (a + T) / 2) / ((T - a) / 2); w = T - a; } // ince iç boncuk
+        else { s = 1; w = 0.5; }                                                      // ikisi arası oluk
+        s = clamp(s, -1, 1);
+        const nz = Math.sqrt(Math.max(0, 1 - s * s));
+        col = w > 0.6 ? chromeAt(s * gx, s * gy, nz) : [40, 30, 60];
+        // ince yiv deseni (dış boruda boydan boya ışık halkaları)
+        const along = y < R ? Math.atan2(y - R, x - cx) * R : (x < cx ? -y : y);
+        if (d <= outer) { const r = 0.94 + 0.06 * Math.cos(along * 1.6); col = [col[0] * r, col[1] * r, col[2] * r]; }
+        al = clamp(Math.min(d + 0.2, T - d + 0.2) * K * 0.6);
+      }
+    }
+    if (col) put(o, col, al);
+  }
+  ctx.putImageData(img, 0, 0);
+  // çerçevenin pencereye düşen ince gölgesi
+  arch = out.toDataURL('image/png');
+  return arch;
+}

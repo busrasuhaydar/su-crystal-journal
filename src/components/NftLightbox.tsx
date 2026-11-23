@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { CheckSquare, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Expand, FilePlus2, Lightbulb, Share2, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { CheckSquare, ChevronLeft, ChevronRight, Copy, Download, ExternalLink, Expand, FilePlus2, Lightbulb, Maximize, Share2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { useProjects } from '../lib/data';
 import { artKey, copyImage, projectSlug, saveOriginal, shareOriginal, useArtworkPages, type Nft } from '../lib/nft';
 import { supabase } from '../lib/supabase';
@@ -88,19 +89,118 @@ function Workbench({ n }: { n: Nft }) {
   );
 }
 
+/** Profesyonel yakınlaştırma: iki parmakla sıkıştır, çift dokun/tıkla, tekerlek (imleç noktasına), sürükle-kaydır, sınırlar içinde kalır.
+ *  1× iken yatay kaydırma önceki/sonraki esere geçer. */
+function ZoomStage({ children, onSwipe, resetKey }: { children: React.ReactNode; onSwipe: (d: number) => void; resetKey: string }) {
+  const el = useRef<HTMLDivElement>(null);
+  const [v, setV] = useState({ s: 1, x: 0, y: 0 });
+  const [anim, setAnim] = useState(false);
+  const st = useRef({ s: 1, x: 0, y: 0 });
+  const pts = useRef(new Map<number, { x: number; y: number }>());
+  const g = useRef<{ d0: number; s0: number; cx: number; cy: number; x0: number; y0: number; sx: number; sy: number; moved: boolean; t: number } | null>(null);
+  const lastTap = useRef(0);
+  const clampV = (s: number, x: number, y: number) => {
+    const r = el.current!.getBoundingClientRect();
+    const mx = (r.width * (s - 1)) / 2, my = (r.height * (s - 1)) / 2;
+    return { s, x: Math.min(mx, Math.max(-mx, x)), y: Math.min(my, Math.max(-my, y)) };
+  };
+  const set = (n: { s: number; x: number; y: number }, smooth = false) => { st.current = n; setAnim(smooth); setV(n); };
+  /** (px,py) ekran noktası sabit kalacak şekilde ölçek s'ye */
+  const zoomAt = (s: number, px: number, py: number, smooth = false) => {
+    const r = el.current!.getBoundingClientRect();
+    const c = st.current, ns = Math.min(6, Math.max(1, s));
+    const ox = px - (r.left + r.width / 2), oy = py - (r.top + r.height / 2);
+    const k = ns / c.s;
+    set(clampV(ns, ox - (ox - c.x) * k, oy - (oy - c.y) * k), smooth);
+  };
+  useEffect(() => { set({ s: 1, x: 0, y: 0 }); }, [resetKey]);
+  useEffect(() => {
+    const node = el.current!;
+    const wheel = (e: WheelEvent) => { e.preventDefault(); zoomAt(st.current.s * Math.exp(-e.deltaY * (e.ctrlKey ? 0.012 : 0.0025)), e.clientX, e.clientY); };
+    node.addEventListener('wheel', wheel, { passive: false });
+    return () => node.removeEventListener('wheel', wheel);
+  }, []);
+  const down = (e: React.PointerEvent) => {
+    el.current!.setPointerCapture(e.pointerId);
+    pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const p = [...pts.current.values()];
+    const c = st.current;
+    if (p.length === 2) {
+      g.current = { d0: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y), s0: c.s, cx: (p[0].x + p[1].x) / 2, cy: (p[0].y + p[1].y) / 2, x0: c.x, y0: c.y, sx: 0, sy: 0, moved: true, t: Date.now() };
+    } else if (p.length === 1) {
+      g.current = { d0: 0, s0: c.s, cx: 0, cy: 0, x0: c.x, y0: c.y, sx: e.clientX, sy: e.clientY, moved: false, t: Date.now() };
+    }
+  };
+  const move = (e: React.PointerEvent) => {
+    if (!pts.current.has(e.pointerId) || !g.current) return;
+    pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const p = [...pts.current.values()], G = g.current;
+    if (p.length >= 2 && G.d0) {
+      const d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+      const cx = (p[0].x + p[1].x) / 2, cy = (p[0].y + p[1].y) / 2;
+      const r = el.current!.getBoundingClientRect();
+      const ns = Math.min(6, Math.max(0.85, G.s0 * (d / G.d0)));
+      const ox = G.cx - (r.left + r.width / 2), oy = G.cy - (r.top + r.height / 2);
+      const k = ns / G.s0;
+      const x = ox - (ox - G.x0) * k + (cx - G.cx), y = oy - (oy - G.y0) * k + (cy - G.cy);
+      set(ns < 1 ? { s: ns, x: 0, y: 0 } : clampV(ns, x, y));
+    } else if (p.length === 1) {
+      const dx = e.clientX - G.sx, dy = e.clientY - G.sy;
+      if (Math.abs(dx) + Math.abs(dy) > 6) G.moved = true;
+      if (st.current.s > 1.01) set(clampV(st.current.s, G.x0 + dx, G.y0 + dy));
+      else set({ s: 1, x: dx * 0.9, y: 0 });
+    }
+  };
+  const up = (e: React.PointerEvent) => {
+    const G = g.current;
+    pts.current.delete(e.pointerId);
+    if (pts.current.size === 1) { // ikinci parmak kalktı: kalan parmakla kaydırmaya devam
+      const [q] = [...pts.current.values()]; const c = st.current;
+      g.current = { d0: 0, s0: c.s, cx: 0, cy: 0, x0: c.x, y0: c.y, sx: q.x, sy: q.y, moved: true, t: Date.now() };
+      return;
+    }
+    if (pts.current.size) return;
+    g.current = null;
+    if (!G) return;
+    const c = st.current;
+    if (c.s < 1) { set({ s: 1, x: 0, y: 0 }, true); return; }
+    if (c.s <= 1.01) {
+      const dx = e.clientX - G.sx;
+      if (G.moved && Math.abs(dx) > 60) { onSwipe(dx < 0 ? 1 : -1); }
+      set({ s: 1, x: 0, y: 0 }, true);
+      if (G.moved) return;
+    }
+    if (!G.moved && G.d0 === 0) {
+      const now = Date.now();
+      if (now - lastTap.current < 300) { lastTap.current = 0; c.s > 1.2 ? set({ s: 1, x: 0, y: 0 }, true) : zoomAt(2.5, e.clientX, e.clientY, true); }
+      else lastTap.current = now;
+    }
+  };
+  const step = (k: number) => { const r = el.current!.getBoundingClientRect(); zoomAt(st.current.s * k, r.left + r.width / 2, r.top + r.height / 2, true); };
+  return (
+    <div className={`zs${v.s > 1.01 ? ' zoomed' : ''}`} ref={el} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+      <div className="zs-in" style={{ transform: `translate3d(${v.x}px, ${v.y}px, 0) scale(${v.s})`, transition: anim ? 'transform .28s cubic-bezier(.2,.8,.2,1)' : 'none' }}>{children}</div>
+      <div className="zs-ctl" onPointerDown={(e) => e.stopPropagation()}>
+        <button type="button" className="btn btn-glass icon-btn" aria-label="Uzaklaştır" disabled={v.s <= 1.01} onClick={() => step(1 / 1.6)}><ZoomOut size={16} /></button>
+        <span className="zs-pct mono">{Math.round(v.s * 100)}%</span>
+        <button type="button" className="btn btn-glass icon-btn" aria-label="Yakınlaştır" disabled={v.s >= 5.99} onClick={() => step(1.6)}><ZoomIn size={16} /></button>
+        <button type="button" className="btn btn-glass icon-btn" aria-label="Sığdır" disabled={v.s <= 1.01} onClick={() => set({ s: 1, x: 0, y: 0 }, true)}><Maximize size={15} /></button>
+      </div>
+    </div>
+  );
+}
+
 export function Lightbox({ items, index, setIndex, onClose }: { items: Nft[]; index: number; setIndex: (i: number) => void; onClose: () => void }) {
   const n = items[index];
   const copy = useCopy();
   const toast = useToast();
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [zoom, setZoom] = useState(false);
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState('');
   const strip = useRef<HTMLDivElement>(null);
-  const touch = useRef<number | null>(null);
   const go = useCallback((d: number) => setIndex((index + d + items.length) % items.length), [index, items.length, setIndex]);
-  useEffect(() => { setLoaded(false); setFailed(false); setZoom(false); setMsg(''); }, [index]);
+  useEffect(() => { setLoaded(false); setFailed(false); setMsg(''); }, [index]);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement; if (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT') return;
@@ -125,18 +225,24 @@ export function Lightbox({ items, index, setIndex, onClose }: { items: Nft[]; in
     } catch (x) { if ((x as Error).name !== 'AbortError') toast.fail(x); }
     setBusy('');
   }
-  return (
+  return createPortal(
     <div className="lb" role="dialog" aria-modal="true" aria-label={n.name}>
       <div className="lb-bg" onClick={onClose} />
       <button type="button" className="lb-x btn btn-glass icon-btn" onClick={onClose} aria-label="Kapat"><X size={18} /></button>
       <button type="button" className="lb-nav l btn btn-glass icon-btn" onClick={() => go(-1)} aria-label="Önceki"><ChevronLeft size={20} /></button>
       <button type="button" className="lb-nav r btn btn-glass icon-btn" onClick={() => go(1)} aria-label="Sonraki"><ChevronRight size={20} /></button>
       <div className="lb-card glass">
-        <div className={`lb-stage${zoom ? ' zoom' : ''}`} onTouchStart={(e) => { touch.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => { if (touch.current != null && !zoom) { const dx = e.changedTouches[0].clientX - touch.current; if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1); } touch.current = null; }}>
-          {n.thumb && !loaded && <img className="lb-ph" src={n.thumb} alt="" />}
-          {src && <img key={src} className="lb-img" src={src} alt={n.name} onLoad={() => setLoaded(true)} onError={() => { if (!failed && n.thumb) setFailed(true); }} onClick={() => setZoom((z) => !z)} style={{ opacity: loaded ? 1 : 0, cursor: zoom ? 'zoom-out' : 'zoom-in' }} />}
+        <div className="lb-stage">
+          <ZoomStage onSwipe={go} resetKey={nftKey(n)}>
+            {n.thumb && !loaded && <img className="lb-ph" src={n.thumb} alt="" draggable={false} />}
+            {src && <img key={src} className="lb-img" src={src} alt={n.name} draggable={false} onLoad={() => setLoaded(true)} onError={() => { if (!failed && n.thumb) setFailed(true); }} style={{ opacity: loaded ? 1 : 0 }} />}
+          </ZoomStage>
           {!loaded && <span className="lb-spin">Orijinal yükleniyor…</span>}
+          <div className="lb-mnav">
+            <button type="button" className="btn btn-glass icon-btn" onClick={() => go(-1)} aria-label="Önceki"><ChevronLeft size={18} /></button>
+            <span className="small mono">{index + 1} / {items.length}</span>
+            <button type="button" className="btn btn-glass icon-btn" onClick={() => go(1)} aria-label="Sonraki"><ChevronRight size={18} /></button>
+          </div>
         </div>
         <div className="lb-info">
           <div className="small muted">{index + 1} / {items.length} · #{n.tokenId.length > 8 ? n.tokenId.slice(-4) : n.tokenId}</div>
@@ -171,6 +277,7 @@ export function Lightbox({ items, index, setIndex, onClose }: { items: Nft[]; in
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

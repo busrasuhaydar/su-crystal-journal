@@ -101,10 +101,10 @@ export default function Home() {
               <div className="wchip" title={w.tip}>
                 <w.Icon size={30} color="var(--orange-500)" strokeWidth={1.6} />
                 <span className="wtemp">{w.temp}°</span>
-                <span className="wtxt"><b>{w.city}</b> · {w.label}<small>{w.lo}° / {w.hi}° · yağış %{w.rain}</small></span>
+                <span className="wtxt">{w.label}<small>{w.lo}° / {w.hi}° · yağış %{w.rain}</small></span>
               </div>
             ) : <div className="wchip small muted">Hava durumu yükleniyor…</div>}
-            {hp.boston && <div className="wchip boston" title="Boston (ABD Doğu saati)" aria-label={`ABD saati ${bostonTime(now)}`}>🇺🇸 <span className="wtxt">Boston</span> <b className="mono">{bostonTime(now)}</b></div>}
+            {hp.boston && <div className="wchip boston" title="ABD Doğu saati" aria-label={`ABD saati ${bostonTime(now)}`}><span aria-hidden="true">🇺🇸</span><b className="mono">{bostonTime(now)}</b></div>}
           </div>
           </div>
           <p className="cr-greet"><span className="script">{greeting(nowMin)} {profile.data?.display_name ?? 'Su'}</span> <span className="cr-heart" aria-hidden="true">♡</span></p>
@@ -141,26 +141,27 @@ export default function Home() {
             </div>
           )}
           {timed.length + untimed.length + allDay.length === 0 ? <Empty title="Sakin bir gün">Bir görev ya da etkinlik ekleyerek günü planla.</Empty> : (
-            <div className="plan">
-              {allDay.map((e) => <button type="button" key={e.id} className="plan-row" onClick={() => openEvent(e)}><span className="mono">Tüm gün</span><span className="pt"><b>{e.title}</b> <span className="small muted">· {EVENT_KIND_LABEL[e.kind]}</span></span></button>)}
+            <div className="plan todo">
+              {allDay.map((e) => <button type="button" key={e.id} className="plan-row" onClick={() => openEvent(e)}><span className="pdot ev" aria-hidden="true" /><span className="pt"><b>{e.title}</b> <span className="small muted">· {EVENT_KIND_LABEL[e.kind]}</span></span><span className="mono">Tüm gün</span></button>)}
               {timed.map((i) => (
                 <div key={i.id} className={`plan-row${i.done ? ' done' : ''}${i === current ? ' live' : ''}${!i.done && i.end <= nowMin ? ' past' : ''}`} role="button" tabIndex={0}
                   onClick={() => i.task ? openTask(i.task) : openEvent(i.event!)} onKeyDown={(e) => e.key === 'Enter' && (i.task ? openTask(i.task) : openEvent(i.event!))}>
-                  <span className="mono">{hhmm(i.at)}</span>
+                  {i.task ? <button type="button" className={`check${i.done ? ' on' : ''}`} aria-label={i.done ? 'Geri al' : 'Tamamla'} onClick={(e) => { e.stopPropagation(); tick(i.task!); }}>{i.done && <Check size={14} strokeWidth={3} />}</button> : <span className="pdot ev" aria-hidden="true" />}
                   <span className="pt"><b>{i.title}</b> <span className="small muted">· {i.sub}</span></span>
-                  {i.task ? <button type="button" className={`check${i.done ? ' on' : ''}`} aria-label="Tamamla" onClick={(e) => { e.stopPropagation(); tick(i.task!); }}>{i.done && <Check size={14} strokeWidth={3} />}</button> : <span />}
+                  <span className="mono">{hhmm(i.at)}</span>
                 </div>
               ))}
-              {untimed.length > 0 && <div className="plan-sep">Gün içinde, saati yok</div>}
+              {untimed.length > 0 && timed.length + allDay.length > 0 && <div className="plan-sep">Gün içinde</div>}
               {untimed.map((t) => (
                 <div key={t.id} className={`plan-row${t.status === 'done' ? ' done' : ''}`} role="button" tabIndex={0} onClick={() => openTask(t)} onKeyDown={(e) => e.key === 'Enter' && openTask(t)}>
-                  <i className={`dot p-${t.priority}`} style={{ marginTop: 7 }} />
+                  <button type="button" className={`check${t.status === 'done' ? ' on' : ''}`} aria-label={t.status === 'done' ? 'Geri al' : 'Tamamla'} onClick={(e) => { e.stopPropagation(); tick(t); }}>{t.status === 'done' && <Check size={14} strokeWidth={3} />}</button>
                   <span className="pt"><b>{t.title}</b></span>
-                  <button type="button" className={`check${t.status === 'done' ? ' on' : ''}`} aria-label="Tamamla" onClick={(e) => { e.stopPropagation(); tick(t); }}>{t.status === 'done' && <Check size={14} strokeWidth={3} />}</button>
+                  <i className={`dot p-${t.priority}`} title="Öncelik" />
                 </div>
               ))}
             </div>
           )}
+          <PlanAdd today={today} />
           {overdueN > 0 && (
             <>
               <h3 style={{ marginTop: 18, marginBottom: 8, color: 'var(--orange-600)' }}>Bekleyen {overdueN} görev</h3>
@@ -276,6 +277,24 @@ function TodoList() {
   );
 }
 
+/** Bugünün planı: yapılacaklar listesi gibi hızlı ekleme (bugüne görev). */
+function PlanAdd({ today }: { today: string }) {
+  const save = useSaveTask();
+  const toast = useToast();
+  const [t, setT] = useState('');
+  async function add() {
+    const v = t.trim(); if (!v) return;
+    try { await save.mutateAsync({ title: v.slice(0, 200), priority: 'medium', status: 'todo', due_date: today }); setT(''); } catch (x) { toast.fail(x); }
+  }
+  return (
+    <form className="plan-add" onSubmit={(e) => { e.preventDefault(); add(); }}>
+      <span className="check ghost" aria-hidden="true"><Plus size={13} strokeWidth={2.6} /></span>
+      <input className="input" value={t} onChange={(e) => setT(e.target.value)} placeholder="Bugüne yapılacak ekle…" aria-label="Bugüne yapılacak ekle" />
+      <button type="submit" className="btn btn-primary btn-sm icon-only" aria-label="Ekle" disabled={!t.trim() || save.isPending}><Check size={15} /></button>
+    </form>
+  );
+}
+
 function IdeasCard() {
   const hp = useHomePrefs();
   const qc = useQueryClient();
@@ -301,7 +320,7 @@ function IdeasCard() {
           {recent.map((i) => (
             <Link key={i.id} to="/fikirler" className="idea-it">
               <b>{i.title}</b>
-              <span className="small muted">{IDEA_CATEGORY_LABEL[i.category]} · {formatRelative(dayKeyOf(i.created_at))}</span>
+              <span className="small muted">{IDEA_CATEGORY_LABEL[i.category]} · {formatRelative(dayKeyOf(i.created_at))}{dayKeyOf(i.created_at) !== todayKey() && <time className="idea-when" dateTime={i.created_at}>{formatShort(dayKeyOf(i.created_at))} · {hhmm(minutesOf(i.created_at))}</time>}</span>
             </Link>
           ))}
         </div>

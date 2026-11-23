@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { Bow, Decor, Intro, Ring } from '../crystal/Decor';
 import { CreateSheet, Dock, NAV, isActive, useRecent } from '../crystal/Nav';
 import { playPageTurn } from '../crystal/pageTurn';
+import { HomeIcon, useApplyBackground } from '../crystal/look';
 import { NotificationBell } from './NotificationBell';
 import { QuickSearch } from './QuickSearch';
 
@@ -116,6 +117,7 @@ export function Shell() {
   const nav = useNavigate();
   const loc = useLocation();
   useSparkle();
+  useApplyBackground();
   useRecent();
   useLayoutEffect(() => { playPageTurn(); }, [loc.pathname]);
   const [deskNew, setDeskNew] = useState(false);
@@ -132,7 +134,7 @@ export function Shell() {
           <nav className="cr-nav" aria-label="Ana menü">
             {NAV.map((n) => (
               <Link key={n.match} to={n.to} className={isActive(loc.pathname, n) ? 'active' : ''} aria-current={isActive(loc.pathname, n) ? 'page' : undefined} title={n.label}>
-                <n.Icon size={18} strokeWidth={1.75} /><span className="lbl">{n.label}</span>
+                {n.match === '/' ? <HomeIcon size={22} fallback={<n.Icon size={18} strokeWidth={1.75} />} /> : <n.Icon size={18} strokeWidth={1.75} />}<span className="lbl">{n.label}</span>
               </Link>
             ))}
           </nav>

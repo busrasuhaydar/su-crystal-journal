@@ -2,6 +2,7 @@
 // kopya cilt (sol kenar) etrafında 3B döner; arka yüzü boş kristal sayfadır, kıvrım gölgesi ve parıltı taşır.
 // Geri gidişte yeni sayfa soldan çevrilerek gelir. Yalnız transform/opacity → GPU. Hareketi azalt/sade modda kapalı.
 import { crystal } from './scene';
+import { pageFlip } from './sound';
 import { NAV, isActive } from './Nav';
 
 const off = () => document.documentElement.classList.contains('simple') || matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -81,17 +82,19 @@ export function playPageTurn() {
   const { leaf, dir } = p;
   const narrow = innerWidth < 761;
   crystal.pulse(dir);
+  pageFlip(narrow ? 0.56 : 0.7);
   const ease = 'cubic-bezier(.45,.05,.2,1)';
-  const dur = narrow ? 640 : 820;
+  const dur = narrow ? 700 : 820;
   const front = leaf.querySelector<HTMLElement>('.cb-leaf-front')!;
   const shade = leaf.querySelector<HTMLElement>('.cb-leaf-shade')!;
   if (dir > 0) {
     // eski sayfa cilt etrafında sola çevrilir
-    const end = narrow ? -118 : -172;
+    const end = narrow ? -150 : -172;
     const a = leaf.animate([
-      { transform: 'perspective(2200px) rotateY(0deg)', opacity: 1 },
-      { transform: `perspective(2200px) rotateY(${end * 0.5}deg) skewY(-1.2deg) scaleX(.985)`, opacity: 1, offset: 0.5 },
-      { transform: `perspective(2200px) rotateY(${end}deg)`, opacity: narrow ? 0 : 0.0 },
+      { transform: `perspective(${narrow ? 1100 : 2200}px) rotateY(0deg)`, opacity: 1 },
+      { transform: `perspective(${narrow ? 1100 : 2200}px) rotateY(${end * 0.5}deg) skewY(-1.2deg) scaleX(.985)`, opacity: 1, offset: 0.5 },
+      { transform: `perspective(${narrow ? 1100 : 2200}px) rotateY(${end * 0.85}deg)`, opacity: 1, offset: 0.85 },
+      { transform: `perspective(${narrow ? 1100 : 2200}px) rotateY(${end}deg)`, opacity: 0 },
     ], { duration: dur, easing: ease, fill: 'forwards' });
     shade.animate([{ opacity: 0 }, { opacity: 0.9, offset: 0.5 }, { opacity: 0.4 }], { duration: dur, easing: ease, fill: 'forwards' });
     front.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.08)', offset: 0.35 }, { filter: 'brightness(.9)' }], { duration: dur, easing: ease });

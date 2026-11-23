@@ -1,7 +1,7 @@
 // Ana sayfa özelleştirmesi (profiles.ui_prefs): kart başlıkları, göster/gizle, Boston saati. Cihazlar arasında eşitlenir.
 import { useProfile } from './data';
 
-export interface UiPrefs { titles?: Record<string, string>; hide?: string[]; boston?: boolean }
+export interface UiPrefs { titles?: Record<string, string>; hide?: string[]; boston?: boolean; avatar?: string | null; bg?: string | null }
 export const HOME_SECTIONS: [string, string][] = [
   ['plan', 'Bugünün planı'], ['routines', 'Hatırlatmalar'], ['todo', 'Yapılacaklar'], ['art', 'Günün eseri'], ['ideas', 'Aklımdakiler'],
   ['week', 'Bu hafta'], ['upcoming', 'Yaklaşanlar'], ['social', 'Sosyal Medya'], ['projects', 'Projelerim'],
