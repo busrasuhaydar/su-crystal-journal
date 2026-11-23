@@ -932,3 +932,29 @@ html.zm .cr-scrim { background: rgba(70,20,60,.45); }
 .cr-index .cr-ix:nth-child(11), .cr-nav a:nth-child(11) { --g1: #AEA9C6; --g2: #3A3550; --g3: #201D2C; --gl: #3A3550A6; }
 .cr-index .cr-ix:nth-child(12), .cr-nav a:nth-child(12) { --g1: #BBB5EF; --g2: #4B3BD6; --g3: #241A7C; --gl: #4B3BD6A6; }
 .cr-index .cr-ix:nth-child(13), .cr-nav a:nth-child(13) { --g1: #D4D7E2; --g2: #8E95B3; --g3: #474E6A; --gl: #8E95B3A6; }
+
+/* ═══ Sayfa çevirme v3: kalkan/kıvrılan yaprak, kayan ışık bandı, kenar parıltısı, alttaki sayfaya düşen gölge ═══ */
+.cb-leaf-shade { background:
+  linear-gradient(90deg, rgba(120,30,100,.38) 0%, rgba(120,30,100,.12) 8%, rgba(255,255,255,0) 20%, rgba(255,255,255,0) 38%, rgba(255,255,255,.62) 46%, rgba(255,255,255,0) 54%, rgba(255,255,255,0) 72%, rgba(255,200,235,.3) 100%);
+  background-size: 260% 100%; background-position: 100% 0; }
+.cb-leaf-edge { position: absolute; top: 0; bottom: 0; right: 0; width: 26px; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.55) 70%, #fff 96%, rgba(200,180,255,.6)); }
+.cb-turn-cast { position: fixed; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, rgba(70,10,60,.42) 0%, rgba(70,10,60,.16) 18%, rgba(70,10,60,.04) 45%, rgba(70,10,60,0) 70%); }
+html.zm .cb-turn-cast { display: none !important; }
+
+/* sayfa köşeleri: fareyle tut-sürükle ya da tıkla → sonraki/önceki bölüm (gerçek defter köşesi gibi kıvrılır) */
+.cb-corner { position: absolute; bottom: 0; z-index: 4; width: 56px; height: 56px; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; --peel: 22px; }
+.cb-corner.next { right: 0; } .cb-corner.prev { left: 0; }
+.cb-corner::before { content: ""; position: absolute; bottom: 0; width: var(--peel); height: var(--peel); transition: width .25s var(--ease), height .25s var(--ease);
+  filter: drop-shadow(-3px -3px 5px rgba(120,30,100,.28)); }
+.cb-corner.next::before { right: 0; border-radius: 0 0 22px 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0) 49%, #fff 50%, #ffe3f3 62%, #f0e6ff 100%); }
+.cb-corner.prev::before { left: 0; border-radius: 0 0 0 12px; filter: drop-shadow(3px -3px 5px rgba(120,30,100,.28));
+  background: linear-gradient(225deg, rgba(255,255,255,0) 49%, #fff 50%, #ffe3f3 62%, #f0e6ff 100%); }
+.cb-corner:hover { --peel: 40px; } .cb-corner.drag { cursor: grabbing; }
+.cb-corner .tip { position: absolute; bottom: 8px; font-size: 11px; font-weight: 600; white-space: nowrap; color: var(--rose-700); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.cb-corner.next .tip { right: 46px; } .cb-corner.prev .tip { left: 46px; }
+.cb-corner:hover .tip { opacity: .9; }
+@media (max-width: 760px) { .cb-corner { display: none; } }
+.cb-corner .tip { display: flex; align-items: center; gap: 2px; }

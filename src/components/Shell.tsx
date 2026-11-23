@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { Bow, Decor, Intro, Ring } from '../crystal/Decor';
 import { CreateSheet, Dock, NAV, isActive, useRecent } from '../crystal/Nav';
 import { playPageTurn } from '../crystal/pageTurn';
+import { PageCorners } from '../crystal/PageCorners';
 import { useApplyBackground, useLookUrl } from '../crystal/look';
 import { NotificationBell } from './NotificationBell';
 import { QuickSearch } from './QuickSearch';
@@ -157,6 +158,7 @@ export function Shell() {
           <div className="cb-scroll">
             <main className="main"><Outlet /></main>
           </div>
+          <PageCorners />
         </section>
       </div>
       <Decor />
