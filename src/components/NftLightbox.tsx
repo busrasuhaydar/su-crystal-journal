@@ -170,10 +170,15 @@ function ZoomStage({ children, onSwipe, resetKey }: { children: React.ReactNode;
       set({ s: 1, x: 0, y: 0 }, true);
       if (G.moved) return;
     }
+    // tek tık/dokunuş: tüm eser görünürken tıklanan noktaya gerçek çözünürlüğe (en az 2×) yakınlaş; yakınken tıklamak tümünü gösterir
     if (!G.moved && G.d0 === 0) {
-      const now = Date.now();
-      if (now - lastTap.current < 300) { lastTap.current = 0; c.s > 1.2 ? set({ s: 1, x: 0, y: 0 }, true) : zoomAt(2.5, e.clientX, e.clientY, true); }
-      else lastTap.current = now;
+      lastTap.current = Date.now();
+      if (c.s > 1.05) { set({ s: 1, x: 0, y: 0 }, true); return; }
+      const img = el.current!.querySelector<HTMLImageElement>('.lb-img');
+      const r = el.current!.getBoundingClientRect();
+      let k = 2.5;
+      if (img?.naturalWidth) { const fit = Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight); k = Math.min(6, Math.max(2, 1 / fit)); }
+      zoomAt(k, e.clientX, e.clientY, true);
     }
   };
   const step = (k: number) => { const r = el.current!.getBoundingClientRect(); zoomAt(st.current.s * k, r.left + r.width / 2, r.top + r.height / 2, true); };
