@@ -447,3 +447,50 @@ html.simple .main > *, html.simple .btn-primary::before, html.simple .ha-arch, h
 @media (prefers-reduced-transparency: reduce) {
   .glass, .card, .cr-sheet, .dialog { background: rgba(255,250,253,.96); }
 }
+
+
+/* ══ v3: titreme, yerleşim, cam tutarlılığı ══ */
+/* Hover'da yukarı kayan öğe imlecin altından çıkıp hover'ı bırakır → sonsuz titreme. Kaldırıldı: yalnız ışık/gölge değişir. */
+.btn:hover:not(:disabled), .cr-nav a:hover, .glass.panel:hover, .card:hover, .kcard:hover, .opp-card:hover, .page-card:hover, .nft-card:hover, .col-card:hover, .cr-summary:hover { transform: none; }
+.glass.panel:hover, .card:hover { box-shadow: var(--crystal-edge), 0 26px 46px -22px rgba(150,30,110,.62); }
+.cb-spine i { pointer-events: none; }
+.cb-spine .cr-rg { display: block; width: 100%; height: 100%; }
+.cr-clasp { height: auto; filter: none; }
+
+/* sayfa yaprağı süslerin ve cam yığının ÜSTÜNDEN geçer */
+.cb-leaf { z-index: 25; }
+
+/* görsel penceresi düğmeleri: .btn { position: relative } bunları akışa düşürüyordu */
+.lb > .lb-x, .lb > .lb-nav, .lb-media > .lb-nav { position: absolute; z-index: 6; }
+.lb > .lb-x { top: 22px; right: 22px; }
+.lb > .lb-nav, .lb-media > .lb-nav { top: 50%; translate: 0 -50%; }
+.lb > .lb-nav.l, .lb-media > .lb-nav.l { left: 22px; } .lb > .lb-nav.r, .lb-media > .lb-nav.r { right: 22px; }
+.lb > .lb-nav:hover:not(:disabled), .lb-media > .lb-nav:hover:not(:disabled), .lb > .lb-x:hover:not(:disabled) { transform: none; }
+@media (max-width: 860px) { .lb > .lb-nav { top: calc(10px + 21dvh); } .lb > .lb-nav.l { left: 10px; } .lb > .lb-nav.r { right: 10px; } .lb > .lb-x { top: max(14px, env(safe-area-inset-top)); right: 14px; } }
+@media (max-width: 1100px) { .lightbox .lb-body { grid-template-columns: minmax(0, 1fr); } }
+.lb-side .btn-ghost { color: var(--rose-700); box-shadow: inset 0 0 0 1px rgba(212,42,134,.25); }
+
+/* açılır pencereler gerçek cam: arkası görünür, yine okunur */
+.dialog, .bell-panel, .block-menu, .cmdk, .lb-card, .cr-sheet { background: linear-gradient(160deg, rgba(255,255,255,.66), rgba(255,240,250,.54) 55%, rgba(240,232,255,.58)); backdrop-filter: blur(26px) saturate(1.7) brightness(1.04); -webkit-backdrop-filter: blur(26px) saturate(1.7) brightness(1.04);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.95), inset 0 0 0 1px rgba(255,255,255,.7), inset 0 -16px 34px -20px rgba(255,255,255,.8), 0 40px 90px -26px rgba(110,20,80,.55); }
+
+/* ══ Ana sayfa üst şerit: tarih en üstte, hava durumu küçük çip ══ */
+.cr-hero { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 26px; padding: 20px 24px 18px; grid-template-columns: none; }
+.cr-hero { display: block; }
+.cr-hero .hero-main { gap: 6px; min-width: 0; }
+.hero-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; }
+.cr-date { margin: 0; font-family: var(--f-display); font-weight: 600; font-size: clamp(26px, 2.6vw, 34px); line-height: 1.1; color: var(--rose-ink); letter-spacing: -.01em; }
+.cr-hero .cr-greet { margin: 0; gap: 8px; }
+.cr-hero .cr-greet .script { font-size: clamp(26px, 2.4vw, 32px); }
+.cr-hero .hero-sum { font-size: 14.5px; }
+.hero-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.wchip { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 18px; background: linear-gradient(155deg, rgba(255,255,255,.7), rgba(255,244,250,.42)); box-shadow: var(--crystal-edge); white-space: nowrap; }
+.wchip .wtemp { font-size: 30px; line-height: 1; }
+.wchip .wtxt { display: block; font-size: 13px; line-height: 1.25; color: var(--ink-900); }
+.wchip .wtxt small { display: block; font-size: 11.5px; color: var(--ink-500); }
+.wchip.boston { padding: 5px 14px; font-size: 12.5px; color: var(--ink-700); border-top: 0; margin: 0; }
+.wchip.boston .wtxt { display: inline; }
+@media (max-width: 760px) {
+  .cr-hero { padding: 16px 16px 14px; gap: 10px; }
+  .wchip { padding: 6px 12px; } .wchip .wtemp { font-size: 22px; } .wchip .wtxt small { display: none; }
+}

@@ -1,6 +1,7 @@
 // Kristal defter süsleri: kristal kolye, altın kilit, kurdele, cam kanatlı kelebekler, pırıltı, taç yaprakları,
 // sayfa kenarı yaprak destesi ve açılış kapağı. Hepsi özgün SVG; animasyonlar yalnız transform/opacity.
 import { useEffect, useRef, useState } from 'react';
+import { claspUrl, ringUrl } from './chrome';
 
 export const Defs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true" focusable="false">
@@ -20,29 +21,8 @@ export const Defs = () => (
   </svg>
 );
 
-const ARCH = 'M14 22 C 22 3, 58 3, 66 22';
-/** Cilt halkası: sayfalardaki iki deliğe giren, yuvarlak kesitli 3B krom boru (üst üste biner çizgilerle silindir gölgelemesi). */
-export const Ring = () => (
-  <svg className="cr-rg" viewBox="0 0 80 36" aria-hidden="true" focusable="false">
-    {[14, 66].map((x) => (
-      <g key={x}>
-        <ellipse cx={x} cy="22" rx="8.4" ry="4.8" fill="url(#cr-hole)" />
-        <ellipse cx={x} cy="22" rx="8.4" ry="4.8" fill="none" stroke="url(#cr-hole-rim)" strokeWidth="1.1" />
-      </g>
-    ))}
-    <path d={ARCH} transform="translate(0 7)" fill="none" stroke="#3A1450" strokeOpacity=".4" strokeWidth="7" strokeLinecap="round" filter="url(#cr-blur)" />
-    <g clipPath="url(#cr-ringclip)" fill="none" strokeLinecap="round">
-      <path d={ARCH} stroke="#10151F" strokeWidth="9" />
-      <path d={ARCH} stroke="#56647C" strokeWidth="7.8" />
-      <path d={ARCH} stroke="#AEBCD0" strokeWidth="6" />
-      <path d={ARCH} stroke="#E9F1FA" strokeWidth="3.8" />
-      <path d={ARCH} transform="translate(-.8 -1.9)" stroke="#FFFFFF" strokeWidth="1.5" />
-      <path d={ARCH} transform="translate(.5 1.1)" stroke="#121826" strokeWidth=".9" strokeOpacity=".75" />
-      <path d={ARCH} transform="translate(.6 2.2)" stroke="#FFC8EA" strokeWidth="1.2" strokeOpacity=".8" />
-      <path d="M40 4 V13" stroke="#121826" strokeWidth=".9" strokeOpacity=".7" /><path d="M41 4.2 V12.8" stroke="#fff" strokeWidth=".6" strokeOpacity=".8" />
-    </g>
-  </svg>
-);
+/** Cilt halkası: ortam yansımalı gerçek krom (bkz. chrome.ts). */
+export const Ring = () => <img className="cr-rg" src={ringUrl()} alt="" aria-hidden="true" draggable={false} />;
 
 export const Bow = ({ className = 'cr-bow' }: { className?: string }) => (
   <svg className={className} viewBox="0 0 120 84" aria-hidden="true">
@@ -66,16 +46,7 @@ const Pendant = () => (
   </svg>
 );
 
-const Clasp = () => (
-  <svg className="cr-clasp" viewBox="0 0 64 120" aria-hidden="true">
-    <rect x="2" y="16" width="34" height="88" rx="10" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth="1.2" /><rect x="2" y="16" width="34" height="88" rx="10" fill="url(#cr-chrome-sh)" />
-    <path d="M36 30 H52 Q62 30 62 42 V78 Q62 90 52 90 H36Z" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth="1.2" /><path d="M36 30 H52 Q62 30 62 42 V78 Q62 90 52 90 H36Z" fill="url(#cr-chrome-sh)" /><path d="M40 34 H51 Q58 34 58 42" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" fill="none" opacity=".85" />
-    <circle cx="48" cy="56" r="8" fill="#DCE5F1" stroke="#2A3346" strokeWidth="1" /><circle cx="48" cy="56" r="6.2" fill="#10151F" /><path d="M48 60 L44.5 76 H51.5Z" fill="#10151F" /><path d="M43 52 A6.5 6.5 0 0 1 49 49.8" stroke="#fff" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity=".7" />
-    <path d="M8 22 V98" stroke="#fff" strokeWidth="2" opacity=".55" strokeLinecap="round" />
-    <rect x="3.6" y="17.6" width="30.8" height="84.8" rx="8.6" fill="none" stroke="#fff" strokeWidth=".9" opacity=".55" /><circle cx="19" cy="36" r="4.6" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth=".9" /><path d="M16.3 37.3 L21.7 34.7" stroke="#1B2230" strokeWidth="1.1" strokeLinecap="round" /><ellipse cx="17.6" cy="34.2" rx="1.6" ry=".9" fill="#fff" opacity=".9" /><circle cx="19" cy="84" r="4.6" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth=".9" /><path d="M16.8 82.2 L21.2 85.8" stroke="#1B2230" strokeWidth="1.1" strokeLinecap="round" /><ellipse cx="17.6" cy="82.2" rx="1.6" ry=".9" fill="#fff" opacity=".9" />
-    <path d="M19 52 l3 6 -3 6 -3 -6Z" fill="#fff" opacity=".9" />
-  </svg>
-);
+const Clasp = () => <img className="cr-clasp" src={claspUrl()} alt="" aria-hidden="true" draggable={false} />;
 
 const Butterfly = ({ k }: { k: number }) => (
   <svg className={`cr-bfly b${k}`} viewBox="0 0 80 60" aria-hidden="true">

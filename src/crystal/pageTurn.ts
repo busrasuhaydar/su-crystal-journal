@@ -2,10 +2,19 @@
 // kopya cilt (sol kenar) etrafında 3B döner; arka yüzü boş kristal sayfadır, kıvrım gölgesi ve parıltı taşır.
 // Geri gidişte yeni sayfa soldan çevrilerek gelir. Yalnız transform/opacity → GPU. Hareketi azalt/sade modda kapalı.
 import { crystal } from './scene';
+import { NAV, isActive } from './Nav';
 
 const off = () => document.documentElement.classList.contains('simple') || matchMedia('(prefers-reduced-motion: reduce)').matches;
 let pending: { leaf: HTMLElement; dir: 1 | -1 } | null = null;
 let lastPath = location.pathname;
+let lastIdx = (history.state as { idx?: number } | null)?.idx ?? 0;
+const navOf = (path: string) => NAV.findIndex((n) => isActive(path, n));
+/** Defter mantığı: menüde ileride olan bölüme geçiş sayfayı ileri çevirir, geride olana geçiş geri çevirir; aynı bölümde derine inmek ileri. */
+function dirBetween(from: string, to: string, fallback: 1 | -1): 1 | -1 {
+  const a = navOf(from), b = navOf(to);
+  if (a >= 0 && b >= 0 && a !== b) return b > a ? 1 : -1;
+  return fallback;
+}
 
 function snapshot(dir: 1 | -1) {
   if (off()) return;
@@ -40,8 +49,9 @@ function snapshot(dir: 1 | -1) {
 
 function onPath(next: string, dir: 1 | -1) {
   const changed = next !== lastPath;
+  const d = dirBetween(lastPath, next, dir);
   lastPath = next;
-  if (changed) snapshot(dir);
+  if (changed) snapshot(d);
 }
 
 /** history'yi sarmala: yönlendirici pushState'i çağırmadan önce kopya alınır. Bir kez kurulur. */
@@ -49,10 +59,16 @@ export function installPageTurn() {
   const push = history.pushState.bind(history);
   history.pushState = (data: unknown, unused: string, url?: string | URL | null) => {
     if (url != null) onPath(new URL(String(url), location.href).pathname, 1);
+    lastIdx = (data as { idx?: number } | null)?.idx ?? lastIdx + 1;
     push(data, unused, url);
   };
-  // popstate: bu dinleyici yönlendiriciden önce eklenir → önce o çalışır
-  addEventListener('popstate', () => onPath(location.pathname, -1));
+  // popstate: bu dinleyici yönlendiriciden önce eklenir → önce o çalışır. Tarayıcı ileri/geri: history idx'ine göre yön
+  addEventListener('popstate', () => {
+    const idx = (history.state as { idx?: number } | null)?.idx ?? lastIdx - 1;
+    const dir: 1 | -1 = idx > lastIdx ? 1 : -1;
+    lastIdx = idx;
+    onPath(location.pathname, dir);
+  });
 }
 
 /** Yeni sayfa DOM'a yerleşince (useLayoutEffect) çağrılır: animasyonu oynatır. */
@@ -82,18 +98,21 @@ export function playPageTurn() {
     a.onfinish = () => leaf.remove();
     a.oncancel = () => leaf.remove();
   } else {
-    // geri: yeni sayfa soldan gelir, eski kopya altta kalır ve söner
-    leaf.style.zIndex = '4';
+    // geri: eski sayfa altta kalır; yeni sayfa cilt tarafından yaprak gibi kalkıp üstüne kapanır (ön yüzü yalnız 90°'den sonra görünür)
+    leaf.style.zIndex = '24';
     const host = document.querySelector<HTMLElement>('.cb-right');
     if (!host) { leaf.remove(); return; }
     host.style.transformOrigin = 'left center';
-    host.style.zIndex = '6';
+    host.style.zIndex = '26';
+    const paper = 'rgba(255,247,252,.94)', glass = 'rgba(255,247,252,0)';
     const a = host.animate([
-      { transform: `perspective(2200px) rotateY(${narrow ? -100 : -150}deg)`, opacity: 0 },
-      { transform: 'perspective(2200px) rotateY(-60deg)', opacity: 1, offset: 0.4 },
-      { transform: 'perspective(2200px) rotateY(0deg)', opacity: 1 },
+      { transform: `perspective(2200px) rotateY(${narrow ? -110 : -165}deg)`, opacity: 0, backgroundColor: paper },
+      { transform: 'perspective(2200px) rotateY(-92deg)', opacity: 0, backgroundColor: paper, offset: 0.4 },
+      { transform: 'perspective(2200px) rotateY(-78deg) skewY(1deg)', opacity: 1, backgroundColor: paper, offset: 0.48 },
+      { transform: 'perspective(2200px) rotateY(-12deg)', opacity: 1, backgroundColor: paper, offset: 0.9 },
+      { transform: 'perspective(2200px) rotateY(0deg)', opacity: 1, backgroundColor: glass },
     ], { duration: dur, easing: ease });
-    leaf.animate([{ opacity: 1 }, { opacity: 0 }], { duration: dur, easing: 'ease-in', fill: 'forwards' });
+    leaf.animate([{ opacity: 1 }, { opacity: 1, offset: 0.46 }, { opacity: 0 }], { duration: dur, easing: 'linear', fill: 'forwards' });
     const done = () => { leaf.remove(); host.style.zIndex = ''; host.style.transformOrigin = ''; };
     a.onfinish = done; a.oncancel = done;
   }

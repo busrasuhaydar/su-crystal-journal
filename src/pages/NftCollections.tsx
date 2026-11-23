@@ -60,7 +60,7 @@ function Overview({ data }: { data: Data }) {
             const pv = [0, 1, 2, 3].map((k) => list[Math.floor((list.length / 4) * k)]).filter(Boolean);
             return (
               <Link key={c.slug} to={`/koleksiyonlar/${c.slug}`} className="col-card glass">
-                <div className={`mosaic m${pv.length}`}>{pv.map((p) => <img key={key(p)} src={p.thumb ?? ''} alt="" loading="lazy" />)}</div>
+                <div className={`mosaic m${pv.length}`}>{pv.map((p, k) => <img key={`${key(p)}-${k}`} src={p.thumb ?? ''} alt="" loading="lazy" />)}</div>
                 <div className="col-meta">
                   <h3>{c.name}</h3>
                   <span className="small muted">{list.length} eser{list.some((l) => l.superrare) ? ' · SuperRare' : ''}</span>

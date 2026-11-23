@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Check, CalendarPlus, ChevronLeft, ChevronRight, Lightbulb, ListPlus, Plus, Search, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, CalendarPlus, ChevronLeft, ChevronRight, Lightbulb, ListPlus, Plus, Search } from 'lucide-react';
 import { useWeather } from '../components/Shell';
 import { useEditors } from '../components/Editors';
 import { TaskRow } from '../components/TaskRow';
@@ -12,7 +12,6 @@ import { supabase } from '../lib/supabase';
 import { flag } from '../lib/countries';
 import { REMINDER_OPTIONS, RRULE_LABEL } from '../lib/types';
 import { isCollectionProject, shareOriginal, useNfts } from '../lib/nft';
-import { HeroArt } from '../components/HeroArt';
 import { bostonTime, useHomePrefs } from '../lib/ui';
 import { IDEA_CATEGORY_LABEL, OPP_DATE_LABEL, PLATFORM_LABEL, POST_STATUS_LABEL, type Platform, type Task } from '../lib/types';
 import { EVENT_KIND_LABEL, PRIORITY_ORDER, PROJECT_STATUS_LABEL } from '../lib/types';
@@ -93,12 +92,23 @@ export default function Home() {
 
   return (
     <>
-      <section className="glass hero cr-hero" data-glass="window">
+      <section className="glass hero cr-hero" data-glass="bar">
         <div className="hero-main">
-          <h1 className="cr-greet"><span className="script">{greeting(nowMin)} {profile.data?.display_name ?? 'Su'},</span> <span className="cr-heart" aria-hidden="true">♡</span></h1>
+          <div className="hero-top"><h1 className="cr-date">{formatLong(today)}</h1>
+          <div className="hero-chips">
+            {w ? (
+              <div className="wchip" title={w.tip}>
+                <w.Icon size={30} color="var(--orange-500)" strokeWidth={1.6} />
+                <span className="wtemp">{w.temp}°</span>
+                <span className="wtxt"><b>{w.city}</b> · {w.label}<small>{w.lo}° / {w.hi}° · yağış %{w.rain}</small></span>
+              </div>
+            ) : <div className="wchip small muted">Hava durumu yükleniyor…</div>}
+            {hp.boston && <div className="wchip boston" title="Boston (ABD Doğu saati)" aria-label={`ABD saati ${bostonTime(now)}`}>🇺🇸 <span className="wtxt">Boston</span> <b className="mono">{bostonTime(now)}</b></div>}
+          </div>
+          </div>
+          <p className="cr-greet"><span className="script">{greeting(nowMin)} {profile.data?.display_name ?? 'Su'}</span> <span className="cr-heart" aria-hidden="true">♡</span></p>
           <p className="hero-sum">{bits.join(' · ')}.</p>
-          <p className="hero-motto" aria-hidden="true">Hayal et ♡ Planla ✦ Yarat</p>
-          {tasks.length > 0 && <div className="prog" style={{ maxWidth: 420 }}><b style={{ width: `${Math.round((done / tasks.length) * 100)}%` }} /></div>}
+          {tasks.length > 0 && <div className="prog" style={{ maxWidth: 420 }} title={`${done}/${tasks.length} görev tamamlandı`}><b style={{ width: `${Math.round((done / tasks.length) * 100)}%` }} /></div>}
           <div className="qa">
             <button type="button" className="btn btn-primary btn-sm" onClick={() => openTask({ due_date: today })}><Plus size={14} />Görev</button>
             <button type="button" className="btn btn-glass btn-sm" onClick={() => openEvent({})}><CalendarPlus size={14} />Etkinlik</button>
@@ -107,22 +117,6 @@ export default function Home() {
             <button type="button" className="btn btn-glass btn-sm" onClick={openSearch}><Search size={14} />Ara <kbd className="kbd">⌘K</kbd></button>
             <Link className="btn btn-glass btn-sm" to={`/gun/${today}`}>Günlük plan <ArrowRight size={14} /></Link>
           </div>
-        </div>
-        <HeroArt />
-        <div className="hero-side">
-        <TodaySummary today={today} done={done} total={tasks.length} events={todayData.events.length} overdue={overdueN} />
-        <div className="hero-weather">
-          {w ? (
-            <>
-              <w.Icon size={44} color="var(--orange-500)" strokeWidth={1.5} />
-              <div className="wtemp">{w.temp}°</div>
-              <div className="wlabel">{w.city} · {w.label}</div>
-              <div className="small muted">Hissedilen {w.feels}° · {w.lo}° / {w.hi}° · yağış %{w.rain}</div>
-              <div className="wtip"><Sparkles size={13} /> {w.tip}</div>
-            </>
-          ) : <div className="small muted">Hava durumu yükleniyor…</div>}
-          {hp.boston && <div className="boston" title="Boston (ABD Doğu saati)" aria-label={`ABD saati ${bostonTime(now)}`}>🇺🇸 <b className="mono">{bostonTime(now)}</b></div>}
-        </div>
         </div>
       </section>
 
@@ -470,30 +464,6 @@ function WeekStrip({ wk, today, data, hol }: { wk: string; today: string; data?:
 }
 
 /** Bugünün özeti: tarih, sayılar ve tamamlanma halkası (kristal). */
-function TodaySummary({ today, done, total, events, overdue }: { today: string; done: number; total: number; events: number; overdue: number }) {
-  const pct = total ? Math.round((done / total) * 100) : 0;
-  const C = 2 * Math.PI * 40;
-  return (
-    <Link to={`/gun/${today}`} className="cr-summary" aria-label={`Bugünün özeti: ${total} görev, ${events} etkinlik, yüzde ${pct} tamamlandı`}>
-      <span className="cr-sum-h"><Sparkles size={15} /> Bugünün Özeti</span>
-      <span className="cr-sum-date">{formatLong(today)}</span>
-      <span className="cr-sum-body">
-        <span className="cr-sum-list">
-          <span><Check size={14} /> {total} görev · {done} bitti</span>
-          <span><CalendarPlus size={14} /> {events} etkinlik</span>
-          {overdue > 0 && <span className="warn"><ListPlus size={14} /> {overdue} bekleyen</span>}
-        </span>
-        <svg className="cr-ring" viewBox="0 0 100 100" aria-hidden="true">
-          <defs><linearGradient id="cr-ring-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FF4FA8" /><stop offset=".55" stopColor="#FF9A4D" /><stop offset="1" stopColor="#2FD6C9" /></linearGradient></defs>
-          <circle cx="50" cy="50" r="40" className="trk" />
-          <circle cx="50" cy="50" r="40" className="val" stroke="url(#cr-ring-g)" strokeDasharray={`${(C * pct) / 100} ${C}`} />
-          <text x="50" y="49" textAnchor="middle" className="pct">%{pct}</text>
-          <text x="50" y="64" textAnchor="middle" className="cap">tamam</text>
-        </svg>
-      </span>
-    </Link>
-  );
-}
 
 /** Mini ay takvimi: her günde görev / etkinlik / fırsat / tatil noktaları; güne tıklayınca günlük plan açılır. */
 function MiniMonth() {
