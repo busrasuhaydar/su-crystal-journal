@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase';
 import { flag } from '../lib/countries';
 import { REMINDER_OPTIONS, RRULE_LABEL } from '../lib/types';
 import { isCollectionProject, shareOriginal, useNfts } from '../lib/nft';
+import { HeroArt } from '../components/HeroArt';
 import { bostonTime, useHomePrefs } from '../lib/ui';
 import { IDEA_CATEGORY_LABEL, OPP_DATE_LABEL, PLATFORM_LABEL, POST_STATUS_LABEL, type Platform, type Task } from '../lib/types';
 import { EVENT_KIND_LABEL, PRIORITY_ORDER, PROJECT_STATUS_LABEL } from '../lib/types';
@@ -118,6 +119,7 @@ export default function Home() {
             <Link className="btn btn-glass btn-sm" to={`/gun/${today}`}>Günlük plan <ArrowRight size={14} /></Link>
           </div>
         </div>
+        <HeroArt />
       </section>
 
       {narrow && <IdeasCard />}

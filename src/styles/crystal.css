@@ -501,3 +501,8 @@ html.simple .main > *, html.simple .btn-primary::before, html.simple .ha-arch, h
 .mcell { background: rgba(255,255,255,.38); }
 .mcell:hover { background: rgba(255,255,255,.62); }
 .mcell.out { background: rgba(255,255,255,.16); }
+
+/* hero: sol metin, sağda günün eseri (kemer pencere) */
+.cr-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 190px); gap: 20px; align-items: center; }
+.cr-hero .hero-art { grid-column: 2; grid-row: 1; }
+@media (max-width: 760px) { .cr-hero { grid-template-columns: minmax(0, 1fr); } .cr-hero .hero-art { grid-column: 1; grid-row: auto; max-width: 230px; justify-self: center; } }
