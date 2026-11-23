@@ -6,7 +6,7 @@ import { formatLong, minutesOf, hhmm, todayKey } from '../lib/dates';
 import { useProfile } from '../lib/data';
 import { currentCity } from '../lib/prefs';
 import { supabase } from '../lib/supabase';
-import { Bow, Decor, Intro } from '../crystal/Decor';
+import { Bow, Decor, Intro, Ring } from '../crystal/Decor';
 import { CreateSheet, Dock, NAV, isActive, useRecent } from '../crystal/Nav';
 import { playPageTurn } from '../crystal/pageTurn';
 import { NotificationBell } from './NotificationBell';
@@ -142,7 +142,7 @@ export function Shell() {
             <p className="cr-motto" aria-hidden="true">Hayal et,<br />Planla,<br />Yarat… <span>♡</span></p>
           </div>
         </aside>
-        <div className="cb-spine" data-glass="spine" aria-hidden="true"><i /><i /><i /><i /><i /></div>
+        <div className="cb-spine" data-glass="spine" aria-hidden="true"><i><Ring /></i><i><Ring /></i><i><Ring /></i><i><Ring /></i><i><Ring /></i></div>
         <section className="cb-right" data-glass="page">
           <header className="cb-top">
             <Link to="/" className="cb-top-brand">Su's Magical Journal</Link>

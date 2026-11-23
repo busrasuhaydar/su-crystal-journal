@@ -6,6 +6,10 @@ export const Defs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true" focusable="false">
     <defs>
       <linearGradient id="cr-pink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFD3EA" /><stop offset=".45" stopColor="#FF7EC0" /><stop offset="1" stopColor="#E0328F" /></linearGradient>
+      <radialGradient id="cr-hole" cx=".5" cy=".4" r=".7"><stop offset="0" stopColor="#1E0A2E" stopOpacity=".92" /><stop offset=".7" stopColor="#3A1450" stopOpacity=".7" /><stop offset="1" stopColor="#5B2A70" stopOpacity=".35" /></radialGradient>
+      <linearGradient id="cr-hole-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2B1038" stopOpacity=".7" /><stop offset=".55" stopColor="#FFFFFF" stopOpacity=".15" /><stop offset="1" stopColor="#FFFFFF" stopOpacity=".95" /></linearGradient>
+      <filter id="cr-blur" x="-20%" y="-40%" width="140%" height="180%"><feGaussianBlur stdDeviation="2.2" /></filter>
+      <clipPath id="cr-ringclip"><rect x="0" y="0" width="80" height="23.6" /></clipPath>
       <linearGradient id="cr-chrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFFFFF" /><stop offset=".14" stopColor="#E8F0FA" /><stop offset=".34" stopColor="#A9B7CA" /><stop offset=".47" stopColor="#4A5468" /><stop offset=".52" stopColor="#151B27" /><stop offset=".58" stopColor="#5D6A80" /><stop offset=".74" stopColor="#C4CFDD" /><stop offset=".88" stopColor="#F2E6F7" /><stop offset="1" stopColor="#8F9DB2" /></linearGradient>
       <linearGradient id="cr-chrome-sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#121A2C" stopOpacity=".55" /><stop offset=".2" stopColor="#121A2C" stopOpacity="0" /><stop offset=".8" stopColor="#121A2C" stopOpacity="0" /><stop offset="1" stopColor="#121A2C" stopOpacity=".5" /></linearGradient>
       <linearGradient id="cr-crystal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFFFFF" /><stop offset=".3" stopColor="#E3F6FF" /><stop offset=".62" stopColor="#F7D2FF" /><stop offset="1" stopColor="#FFE2EF" /></linearGradient>
@@ -13,6 +17,30 @@ export const Defs = () => (
       <radialGradient id="cr-petal" cx=".5" cy=".85" r=".9"><stop offset="0" stopColor="#FF8CC6" /><stop offset=".55" stopColor="#FFC9E3" /><stop offset="1" stopColor="#FFF4FA" /></radialGradient>
       <linearGradient id="cr-bark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#8E5A74" /><stop offset="1" stopColor="#C58FA9" /></linearGradient>
     </defs>
+  </svg>
+);
+
+const ARCH = 'M14 22 C 22 3, 58 3, 66 22';
+/** Cilt halkası: sayfalardaki iki deliğe giren, yuvarlak kesitli 3B krom boru (üst üste biner çizgilerle silindir gölgelemesi). */
+export const Ring = () => (
+  <svg className="cr-rg" viewBox="0 0 80 36" aria-hidden="true" focusable="false">
+    {[14, 66].map((x) => (
+      <g key={x}>
+        <ellipse cx={x} cy="22" rx="8.4" ry="4.8" fill="url(#cr-hole)" />
+        <ellipse cx={x} cy="22" rx="8.4" ry="4.8" fill="none" stroke="url(#cr-hole-rim)" strokeWidth="1.1" />
+      </g>
+    ))}
+    <path d={ARCH} transform="translate(0 7)" fill="none" stroke="#3A1450" strokeOpacity=".4" strokeWidth="7" strokeLinecap="round" filter="url(#cr-blur)" />
+    <g clipPath="url(#cr-ringclip)" fill="none" strokeLinecap="round">
+      <path d={ARCH} stroke="#10151F" strokeWidth="9" />
+      <path d={ARCH} stroke="#56647C" strokeWidth="7.8" />
+      <path d={ARCH} stroke="#AEBCD0" strokeWidth="6" />
+      <path d={ARCH} stroke="#E9F1FA" strokeWidth="3.8" />
+      <path d={ARCH} transform="translate(-.8 -1.9)" stroke="#FFFFFF" strokeWidth="1.5" />
+      <path d={ARCH} transform="translate(.5 1.1)" stroke="#121826" strokeWidth=".9" strokeOpacity=".75" />
+      <path d={ARCH} transform="translate(.6 2.2)" stroke="#FFC8EA" strokeWidth="1.2" strokeOpacity=".8" />
+      <path d="M40 4 V13" stroke="#121826" strokeWidth=".9" strokeOpacity=".7" /><path d="M41 4.2 V12.8" stroke="#fff" strokeWidth=".6" strokeOpacity=".8" />
+    </g>
   </svg>
 );
 
