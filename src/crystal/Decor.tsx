@@ -6,7 +6,8 @@ export const Defs = () => (
   <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true" focusable="false">
     <defs>
       <linearGradient id="cr-pink" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFD3EA" /><stop offset=".45" stopColor="#FF7EC0" /><stop offset="1" stopColor="#E0328F" /></linearGradient>
-      <linearGradient id="cr-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFF6CF" /><stop offset=".35" stopColor="#F2CB6B" /><stop offset=".7" stopColor="#C8902F" /><stop offset="1" stopColor="#FFE9A8" /></linearGradient>
+      <linearGradient id="cr-chrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FFFFFF" /><stop offset=".14" stopColor="#E8F0FA" /><stop offset=".34" stopColor="#A9B7CA" /><stop offset=".47" stopColor="#4A5468" /><stop offset=".52" stopColor="#151B27" /><stop offset=".58" stopColor="#5D6A80" /><stop offset=".74" stopColor="#C4CFDD" /><stop offset=".88" stopColor="#F2E6F7" /><stop offset="1" stopColor="#8F9DB2" /></linearGradient>
+      <linearGradient id="cr-chrome-sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#121A2C" stopOpacity=".55" /><stop offset=".2" stopColor="#121A2C" stopOpacity="0" /><stop offset=".8" stopColor="#121A2C" stopOpacity="0" /><stop offset="1" stopColor="#121A2C" stopOpacity=".5" /></linearGradient>
       <linearGradient id="cr-crystal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFFFFF" /><stop offset=".3" stopColor="#E3F6FF" /><stop offset=".62" stopColor="#F7D2FF" /><stop offset="1" stopColor="#FFE2EF" /></linearGradient>
       <linearGradient id="cr-wing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#FFFFFF" stopOpacity=".95" /><stop offset=".45" stopColor="#FFC2E4" stopOpacity=".8" /><stop offset="1" stopColor="#B9A4FF" stopOpacity=".75" /></linearGradient>
       <radialGradient id="cr-petal" cx=".5" cy=".85" r=".9"><stop offset="0" stopColor="#FF8CC6" /><stop offset=".55" stopColor="#FFC9E3" /><stop offset="1" stopColor="#FFF4FA" /></radialGradient>
@@ -28,8 +29,8 @@ export const Bow = ({ className = 'cr-bow' }: { className?: string }) => (
 
 const Pendant = () => (
   <svg className="cr-pendant" viewBox="0 0 60 170" aria-hidden="true">
-    <path d="M30 0 V64" stroke="url(#cr-gold)" strokeWidth="2.4" strokeDasharray="5 3" />
-    <circle cx="30" cy="66" r="6" fill="url(#cr-gold)" stroke="#fff" strokeWidth="1" />
+    <path d="M30 0 V64" stroke="#2A3346" strokeWidth="3.4" strokeDasharray="5 3" /><path d="M30 0 V64" stroke="#DCE5F1" strokeWidth="2" strokeDasharray="5 3" />
+    <circle cx="30" cy="66" r="6" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth="1" /><circle cx="30" cy="66" r="6" fill="url(#cr-chrome-sh)" /><ellipse cx="28" cy="63.5" rx="2" ry="1.2" fill="#fff" opacity=".9" />
     <path d="M30 74 C10 94 4 120 30 166 C56 120 50 94 30 74Z" fill="url(#cr-crystal)" stroke="#fff" strokeWidth="1.6" />
     <path d="M30 74 L17 108 L30 166 L43 108Z" fill="#fff" opacity=".42" />
     <path d="M17 108 H43 M30 74 V166" stroke="#fff" strokeWidth="1" opacity=".7" />
@@ -39,9 +40,9 @@ const Pendant = () => (
 
 const Clasp = () => (
   <svg className="cr-clasp" viewBox="0 0 64 120" aria-hidden="true">
-    <rect x="2" y="16" width="34" height="88" rx="10" fill="url(#cr-gold)" stroke="#9A6A1E" strokeWidth="1.2" />
-    <path d="M36 30 H52 Q62 30 62 42 V78 Q62 90 52 90 H36Z" fill="url(#cr-gold)" stroke="#9A6A1E" strokeWidth="1.2" />
-    <circle cx="48" cy="56" r="7" fill="#6E3D10" /><path d="M48 60 L44.5 76 H51.5Z" fill="#6E3D10" />
+    <rect x="2" y="16" width="34" height="88" rx="10" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth="1.2" /><rect x="2" y="16" width="34" height="88" rx="10" fill="url(#cr-chrome-sh)" />
+    <path d="M36 30 H52 Q62 30 62 42 V78 Q62 90 52 90 H36Z" fill="url(#cr-chrome)" stroke="#2A3346" strokeWidth="1.2" /><path d="M36 30 H52 Q62 30 62 42 V78 Q62 90 52 90 H36Z" fill="url(#cr-chrome-sh)" /><path d="M40 34 H51 Q58 34 58 42" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" fill="none" opacity=".85" />
+    <circle cx="48" cy="56" r="8" fill="#DCE5F1" stroke="#2A3346" strokeWidth="1" /><circle cx="48" cy="56" r="6.2" fill="#10151F" /><path d="M48 60 L44.5 76 H51.5Z" fill="#10151F" /><path d="M43 52 A6.5 6.5 0 0 1 49 49.8" stroke="#fff" strokeWidth="1.1" strokeLinecap="round" fill="none" opacity=".7" />
     <path d="M8 22 V98" stroke="#fff" strokeWidth="2" opacity=".55" strokeLinecap="round" />
     <circle cx="19" cy="38" r="5" fill="url(#cr-crystal)" stroke="#fff" /><circle cx="19" cy="82" r="5" fill="url(#cr-crystal)" stroke="#fff" />
     <path d="M19 52 l3 6 -3 6 -3 -6Z" fill="#fff" opacity=".9" />
