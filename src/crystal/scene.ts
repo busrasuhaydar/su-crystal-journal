@@ -1,8 +1,13 @@
 // Kristal sahne çalışma zamanı: tek tam ekran WebGL2 tuvali.
 // DOM'daki [data-glass] öğelerinin konumları her karede ölçülür ve shader'a cam levha olarak verilir.
-// Performans: gökyüzü düşük çözünürlükte ~12 fps güncellenir; cam geçişi ≤30 fps (mobilde 24), sekme gizliyken durur,
-// "hareketi azalt" ve sade modda yalnızca değişiklik olunca tek kare çizilir. WebGL2 yoksa html.no-gl → CSS cam.
-import { GLASS, MAX_SLABS, SKY, VERT } from './shaders';
+// Arkaplan: public/arkaplan.webp bir kez dokuya yüklenir ("cover"; mobilde şatoya odaklı). Cam geçişi ≤30 fps (mobilde 24),
+// sekme gizliyken durur, "hareketi azalt" ve sade modda yalnızca değişiklik olunca tek kare çizilir. WebGL2 yoksa html.no-gl → CSS cam + CSS arkaplan.
+import { GLASS, MAX_SLABS, VERT } from './shaders';
+
+// Görselde şatonun yeri (0..1, sol üst köken): gövde x 0.67–0.95, taban y≈0.62
+const CASTLE = { x: 0.78, base: 0.62 };
+/** Dar (dikey) ekranda görselin şato tarafına, geniş ekranda ortasına odaklan. CSS yedeği de aynı değeri kullanır (--bg-x). */
+const focusX = (va: number) => { const t = Math.min(Math.max((va - 0.5) / 1.2, 0), 1); return 0.5 + 0.32 * (1 - t * t * (3 - 2 * t)); };
 
 type Kind = { r: number; bevel: number; frost: number; milk: number; thick: number; shadow: number; rim: number; irid: number };
 const KINDS: Record<string, Kind> = {
@@ -40,10 +45,12 @@ function program(gl: WebGL2RenderingContext, fs: string) {
 }
 
 export function startCrystal(canvas: HTMLCanvasElement): () => void {
+  const setFocus = () => document.documentElement.style.setProperty('--bg-x', `${(focusX(innerWidth / innerHeight) * 100).toFixed(1)}%`);
+  setFocus();
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance', preserveDrawingBuffer: false });
   if (!gl) { document.documentElement.classList.add('no-gl'); return () => {}; }
-  let skyP: WebGLProgram, glassP: WebGLProgram;
-  try { skyP = program(gl, SKY); glassP = program(gl, GLASS); } catch (e) {
+  let glassP: WebGLProgram;
+  try { glassP = program(gl, GLASS); } catch (e) {
     console.warn('Kristal shader derlenemedi', e); document.documentElement.classList.add('no-gl'); return () => {};
   }
   document.documentElement.classList.add('gl');
@@ -53,13 +60,12 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
+  // arkaplan görseli: yüklenene kadar CSS arkaplanı (aynı görsel) görünür
   const tex = gl.createTexture()!;
-  const fbo = gl.createFramebuffer()!;
-  let skyW = 0, skyH = 0;
+  let loaded = false, imgW = 1672, imgH = 941;
   const U = (p: WebGLProgram, n: string) => gl.getUniformLocation(p, n);
-  const su = { res: U(skyP, 'uRes'), time: U(skyP, 'uTime'), mobile: U(skyP, 'uMobile') };
   const gu = {
-    sky: U(glassP, 'uSky'), res: U(glassP, 'uRes'), dpr: U(glassP, 'uDpr'), time: U(glassP, 'uTime'), light: U(glassP, 'uLight'), count: U(glassP, 'uCount'),
+    sky: U(glassP, 'uSky'), img: U(glassP, 'uImg'), lod: U(glassP, 'uLod'), bgLod: U(glassP, 'uBgLod'), res: U(glassP, 'uRes'), dpr: U(glassP, 'uDpr'), time: U(glassP, 'uTime'), light: U(glassP, 'uLight'), count: U(glassP, 'uCount'),
     rect: U(glassP, 'uRect'), shape: U(glassP, 'uShape'), opt: U(glassP, 'uOpt'), map: U(glassP, 'uMap'), clip: U(glassP, 'uClip'), turn: U(glassP, 'uTurn'),
   };
   const rects = new Float32Array(MAX_SLABS * 4), shapes = new Float32Array(MAX_SLABS * 4), opts = new Float32Array(MAX_SLABS * 4), maps = new Float32Array(MAX_SLABS * 4), clips = new Float32Array(MAX_SLABS * 4);
@@ -67,31 +73,46 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   const coarse = matchMedia('(pointer: coarse)').matches;
   const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('simple');
   let dpr = 1, W = 0, H = 0, mobile = 0;
+  // ekran uv (0..1, sol üst) → görsel uv:  iuv = uv * s + o   ("cover" + odak)
+  let cs = { sx: 1, sy: 1, ox: 0, oy: 0 }, lodK = 0, bgLod = 0;
+  function layout() {
+    const vw = innerWidth, vh = innerHeight, va = vw / vh, ia = imgW / imgH;
+    if (va > ia) { const sy = ia / va; cs = { sx: 1, sy, ox: 0, oy: (1 - sy) * 0.5 }; }
+    else { const sx = va / ia; cs = { sx, sy: 1, ox: (1 - sx) * focusX(va), oy: 0 }; }
+    const texPerCss = (imgW * cs.sx) / vw;                  // görselin 1 css px'e düşen doku sayısı
+    bgLod = Math.max(0, Math.log2(texPerCss / dpr));        // küçültme varsa mip
+    lodK = Math.max(0, Math.log2(texPerCss / 0.6));         // buzlanma genişliği önceki 0.6× gökyüzü dokusuyla aynı kalsın
+  }
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.6 : 1.5);
     W = Math.round(innerWidth * dpr); H = Math.round(innerHeight * dpr);
     canvas.width = W; canvas.height = H;
     mobile = innerWidth < 761 ? 1 : 0;
-    const s = coarse ? 0.55 : 0.6;
-    skyW = Math.max(64, Math.round(innerWidth * s)); skyH = Math.max(64, Math.round(innerHeight * s));
-    gl!.bindTexture(gl!.TEXTURE_2D, tex);
-    gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, skyW, skyH, 0, gl!.RGBA, gl!.UNSIGNED_BYTE, null);
-    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR_MIPMAP_LINEAR);
-    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR);
-    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
-    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
-    gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbo);
-    gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.COLOR_ATTACHMENT0, gl!.TEXTURE_2D, tex, 0);
-    gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
-    lastSky = -1e9;
+    setFocus(); layout();
   }
+  const image = new Image();
+  image.decoding = 'async';
+  image.onload = () => {
+    const g = gl!;
+    imgW = image.naturalWidth; imgH = image.naturalHeight;
+    g.bindTexture(g.TEXTURE_2D, tex);
+    g.texImage2D(g.TEXTURE_2D, 0, g.RGBA, g.RGBA, g.UNSIGNED_BYTE, image);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MIN_FILTER, g.LINEAR_MIPMAP_LINEAR);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_MAG_FILTER, g.LINEAR);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_S, g.CLAMP_TO_EDGE);
+    g.texParameteri(g.TEXTURE_2D, g.TEXTURE_WRAP_T, g.CLAMP_TO_EDGE);
+    g.generateMipmap(g.TEXTURE_2D);
+    loaded = true; layout(); wake();
+  };
+  image.onerror = () => { document.documentElement.classList.replace('gl', 'no-gl'); };
+  image.src = `${import.meta.env.BASE_URL}arkaplan.webp`;
 
   // ışık: fareyi yumuşakça izler; dokunmatikte yavaşça döner
   const light = { x: innerWidth * 0.25, y: -80, tx: innerWidth * 0.25, ty: -80 };
   const onMove = (e: PointerEvent) => { lastInput = performance.now(); if (e.pointerType === 'mouse') { light.tx = e.clientX; light.ty = e.clientY - 40; wake(); } };
   addEventListener('pointermove', onMove, { passive: true });
 
-  let raf = 0, lastSky = -1e9, lastFrame = 0, running = true, ready = false, lastInput = performance.now();
+  let raf = 0, lastFrame = 0, running = true, ready = false, lastInput = performance.now();
   const t0 = performance.now();
 
   function measure() {
@@ -112,14 +133,12 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
       shapes.set([rad, k.bevel * (mobile ? 0.8 : 1), k.frost, k.milk], n * 4);
       opts.set([k.thick * (mobile ? 0.75 : 1), k.shadow, k.rim, k.irid], n * 4);
       if (el.dataset.glass === 'window') {
-        // pencere oranında, şato + ufuk + güneşi çerçeveleyen sahne bölgesi
-        const vw = innerWidth, vh = innerHeight;
-        // şato tabanı pencerenin %86 yüksekliğine, masaüstünde sağdaki kristal kartların arkasına (%80) oturur
-        const cx = vw * (mobile ? 0.70 : 0.80), base = vh * (mobile ? 0.61 : 0.67);
-        let th = vh * 0.62, tw = th * (b.width / b.height);
-        if (tw > vw * 0.98) { tw = vw * 0.98; th = tw * (b.height / b.width); }
-        const tx = Math.min(Math.max(cx - tw * (mobile ? 0.5 : 0.8), 0), vw - tw), ty = Math.min(Math.max(base - th * 0.86, 0), vh - th);
-        maps.set([tx, ty, tw, th], n * 4);
+        // pencere oranında, görseldeki şato + ufku çerçeveleyen bölge (görsel uv → ekran css px)
+        const ar = (b.width / b.height) * (imgH / imgW);                 // pencere en/boy oranı, görsel uv biriminde
+        let hh = mobile ? 0.6 : 0.62, ww = hh * ar;
+        if (ww > 0.98) { ww = 0.98; hh = ww / ar; }
+        const left = Math.min(Math.max(CASTLE.x - ww * (mobile ? 0.5 : 0.8), 0), 1 - ww), top = Math.min(Math.max(CASTLE.base - hh * 0.86, 0), 1 - hh);
+        maps.set([((left - cs.ox) / cs.sx) * innerWidth, ((top - cs.oy) / cs.sy) * innerHeight, (ww / cs.sx) * innerWidth, (hh / cs.sy) * innerHeight], n * 4);
       } else maps.set([0, 0, 0, 0], n * 4);
       n++;
     }
@@ -135,22 +154,11 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     const fps = (coarse ? 24 : 30) / (idle ? 2 : 1);
     if (!still && now - lastFrame < 1000 / fps - 2) { raf = requestAnimationFrame(frame); return; }
     lastFrame = now;
+    if (!loaded) return;
     const t = (now - t0) / 1000;
     light.x += (light.tx - light.x) * 0.12; light.y += (light.ty - light.y) * 0.12;
     if (coarse && !still) { light.tx = innerWidth * (0.5 + 0.35 * Math.sin(t * 0.25)); light.ty = innerHeight * (0.15 + 0.1 * Math.cos(t * 0.31)); }
     const g = gl!;
-    // gökyüzü
-    if (now - lastSky > (still ? 1e12 : idle ? 170 : 85) || lastSky < 0) {
-      lastSky = now;
-      g.bindFramebuffer(g.FRAMEBUFFER, fbo);
-      g.viewport(0, 0, skyW, skyH);
-      g.useProgram(skyP);
-      g.uniform2f(su.res, skyW, skyH); g.uniform1f(su.time, still ? 12 : t); g.uniform1f(su.mobile, mobile);
-      g.drawArrays(g.TRIANGLES, 0, 3);
-      g.bindFramebuffer(g.FRAMEBUFFER, null);
-      g.bindTexture(g.TEXTURE_2D, tex);
-      g.generateMipmap(g.TEXTURE_2D);
-    }
     // cam
     const n = measure();
     let turnX = 0, turnA = 0;
@@ -161,6 +169,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     g.viewport(0, 0, W, H);
     g.useProgram(glassP);
     g.activeTexture(g.TEXTURE0); g.bindTexture(g.TEXTURE_2D, tex); g.uniform1i(gu.sky, 0);
+    g.uniform4f(gu.img, cs.sx, cs.sy, cs.ox, cs.oy); g.uniform1f(gu.lod, lodK); g.uniform1f(gu.bgLod, bgLod);
     g.uniform2f(gu.res, W, H); g.uniform1f(gu.dpr, dpr); g.uniform1f(gu.time, still ? 12 : t);
     g.uniform2f(gu.light, light.x, light.y); g.uniform1i(gu.count, n);
     g.uniform4fv(gu.rect, rects); g.uniform4fv(gu.shape, shapes); g.uniform4fv(gu.opt, opts); g.uniform4fv(gu.map, maps); g.uniform4fv(gu.clip, clips);

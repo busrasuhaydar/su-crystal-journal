@@ -25,7 +25,8 @@
 html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 body {
   font-family: var(--f-sans); color: var(--ink-900); font-size: 14.5px; letter-spacing: -.006em;
-  background: linear-gradient(180deg, #A99AF0 0%, #E9A9DE 38%, #FFC8B4 66%, #C9B3EE 100%) fixed;
+  /* arkaplan görseli: WebGL açılana kadar ve WebGL yoksa bu görünür; --bg-x odak noktasını scene.ts verir (mobilde şato tarafı) */
+  background: url('/arkaplan.webp') var(--bg-x, 50%) 50% / cover no-repeat fixed, linear-gradient(180deg, #A99AF0 0%, #E9A9DE 38%, #FFC8B4 66%, #C9B3EE 100%) fixed;
   -webkit-tap-highlight-color: transparent;
 }
 body::before, body::after { content: none; }
