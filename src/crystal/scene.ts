@@ -222,12 +222,14 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   const onScroll = () => { lastInput = performance.now(); scrollUntil = lastInput + 220; wake(); };
   document.addEventListener('scroll', onScroll, { capture: true, passive: true });
   addEventListener('resize', onResize);
+  // tarayıcı menüsünden yakınlaştırma: devicePixelRatio değişince de tuvali yeniden kur
+  const vv = window.visualViewport; vv?.addEventListener('resize', onResize);
   document.addEventListener('visibilitychange', onVis);
   canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); running = false; document.documentElement.classList.replace('gl', 'no-gl'); });
   resize(); wake();
   return () => {
     running = false; cancelAnimationFrame(raf);
-    removeEventListener('pointermove', onMove); removeEventListener('resize', onResize);
+    removeEventListener('pointermove', onMove); removeEventListener('resize', onResize); vv?.removeEventListener('resize', onResize);
     document.removeEventListener('visibilitychange', onVis); document.removeEventListener('scroll', onScroll, true); ro.disconnect(); mo.disconnect();
   };
 }

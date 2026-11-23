@@ -13,6 +13,9 @@ installSounds();
 // sayfa yakınlaştırması kapalı (arkaplan tuvali bozulmasın); eser görüntüleyicinin kendi profesyonel yakınlaştırması var
 const pinchOk = (t: EventTarget | null) => !!(t as HTMLElement | null)?.closest?.('.zs');
 document.addEventListener('gesturestart', (e) => { if (!pinchOk(e.target)) e.preventDefault(); });
+// masaüstü: izleme paneli sıkıştırması (ctrl+tekerlek) ve ⌘/Ctrl +, −, 0 tarayıcı yakınlaştırması da kapalı
+document.addEventListener('wheel', (e) => { if (e.ctrlKey && !pinchOk(e.target)) e.preventDefault(); }, { passive: false, capture: true });
+document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && ['+', '=', '-', '_', '0'].includes(e.key) && !pinchOk(document.activeElement)) e.preventDefault(); }, { capture: true });
 document.addEventListener('touchmove', (e) => { if (e.touches.length > 1 && !pinchOk(e.target)) e.preventDefault(); }, { passive: false });
 import { queryClient, useRealtime, useSession } from './lib/data';
 import { ToastProvider } from './components/ui';
