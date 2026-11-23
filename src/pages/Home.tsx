@@ -92,7 +92,7 @@ export default function Home() {
 
   return (
     <>
-      <section className="glass hero cr-hero" data-glass="bar">
+      <section className="glass hero cr-hero" data-glass="window">
         <div className="hero-main">
           <div className="hero-top"><h1 className="cr-date">{formatLong(today)}</h1>
           <div className="hero-chips">
