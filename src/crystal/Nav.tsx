@@ -1,6 +1,5 @@
 // Gezinme: masaüstü sol sayfa, mobil kristal dok, "Defter" içindekiler sayfası ve "Yeni" oluşturma sayfası.
 // Dok sabitlemeleri ve son açılanlar cihazda tutulur (su:dock, su:recent). Dokta yukarı kaydırma içindekileri açar.
-import { HomeIcon } from './look';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -172,7 +171,7 @@ export function Dock() {
   const y0 = useRef<number | null>(null);
   const cell = (n: NavItem) => (
     <Link key={n.match} to={n.to} className={isActive(loc.pathname, n) ? 'active' : ''} aria-current={isActive(loc.pathname, n) ? 'page' : undefined}>
-      <span className="ic">{n.match === '/' ? <HomeIcon size={30} fallback={<n.Icon size={22} strokeWidth={1.75} />} /> : <n.Icon size={22} strokeWidth={1.75} />}</span><span className="tx">{n.short}</span>
+      <span className="ic"><n.Icon size={22} strokeWidth={1.75} /></span><span className="tx">{n.short}</span>
     </Link>
   );
   const inIndex = !items.some((n) => isActive(loc.pathname, n)) && NAV.some((n) => isActive(loc.pathname, n));

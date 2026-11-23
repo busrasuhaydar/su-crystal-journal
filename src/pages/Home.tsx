@@ -104,7 +104,7 @@ export default function Home() {
                 <span className="wtxt">{w.label}<small>{w.lo}° / {w.hi}° · yağış %{w.rain}</small></span>
               </div>
             ) : <div className="wchip small muted">Hava durumu yükleniyor…</div>}
-            {hp.boston && <div className="wchip boston" title="ABD Doğu saati" aria-label={`ABD saati ${bostonTime(now)}`}><span aria-hidden="true">🇺🇸</span><b className="mono">{bostonTime(now)}</b></div>}
+            {hp.boston && <div className="wchip boston" title="ABD Doğu saati" aria-label={`ABD saati ${bostonTime(now)}`}><b className="mono">{bostonTime(now)}</b></div>}
           </div>
           </div>
           <p className="cr-greet"><span className="script">{greeting(nowMin)} {profile.data?.display_name ?? 'Su'}</span> <span className="cr-heart" aria-hidden="true">♡</span></p>

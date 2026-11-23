@@ -658,3 +658,9 @@ html.zm .cb-leaf { display: none !important; }
 .cr-medal .cr-medal-ava { position: absolute; inset: 9px; width: calc(100% - 18px); height: calc(100% - 18px); border-radius: 50%; object-fit: cover; z-index: 0; box-shadow: 0 0 0 2px #fff, inset 0 0 14px rgba(255,255,255,.5); }
 .cr-medal .cr-medal-bow { z-index: 2; }
 .cr-medal::after { z-index: 1; }
+
+/* yakınlaştırmada tarih kutusunun arkasındaki görsel: sayfa arkaplanıyla aynı hizada, orijinal çözünürlükte (büyütülüp bulanıklaşmaz) */
+html.zm .cr-hero, html.zm.has-bg .cr-hero {
+  background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,236,248,.18) 60%, rgba(255,255,255,.3)) scroll,
+    var(--bg-img, url('/arkaplan.webp')) var(--bg-x, 50%) 50% / cover no-repeat fixed !important;
+}

@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 import { Bow, Decor, Intro, Ring } from '../crystal/Decor';
 import { CreateSheet, Dock, NAV, isActive, useRecent } from '../crystal/Nav';
 import { playPageTurn } from '../crystal/pageTurn';
-import { HomeIcon, useApplyBackground, useLookUrl } from '../crystal/look';
+import { useApplyBackground, useLookUrl } from '../crystal/look';
 import { NotificationBell } from './NotificationBell';
 import { QuickSearch } from './QuickSearch';
 
@@ -133,9 +133,9 @@ export function Shell() {
           </Link>
           <div className="cr-hello"><b>Merhaba {profile.data?.display_name ?? 'Su'} ♡</b><span>Hayallerin her zaman seninle.</span></div>
           <nav className="cr-nav" aria-label="Ana menü">
-            {NAV.map((n) => (
+            {NAV.filter((n) => n.match !== '/').map((n) => (
               <Link key={n.match} to={n.to} className={isActive(loc.pathname, n) ? 'active' : ''} aria-current={isActive(loc.pathname, n) ? 'page' : undefined} title={n.label}>
-                {n.match === '/' ? <HomeIcon size={22} fallback={<n.Icon size={18} strokeWidth={1.75} />} /> : <n.Icon size={18} strokeWidth={1.75} />}<span className="lbl">{n.label}</span>
+                <n.Icon size={18} strokeWidth={1.75} /><span className="lbl">{n.label}</span>
               </Link>
             ))}
           </nav>
