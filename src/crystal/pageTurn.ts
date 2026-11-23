@@ -33,7 +33,7 @@ function snapshot(dir: 1 | -1) {
   front.appendChild(shade);
   const back = document.createElement('div'); back.className = 'cb-leaf-back';
   leaf.append(front, back);
-  document.body.appendChild(leaf);
+  (document.querySelector('.cb-stage') ?? document.body).appendChild(leaf);
   if (cs) cs.scrollTop = page.scrollTop;
   pending = { leaf, dir };
 }

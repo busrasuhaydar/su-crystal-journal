@@ -395,6 +395,7 @@ a { color: var(--pink-d); }
   .cr-hero { grid-template-columns: minmax(0, 1fr) minmax(200px, .8fr); grid-template-areas: "main art" "side side"; }
   .hero-side { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .cr-branch { width: 170px; }
+  .cr-branch.tl { display: none; }
 }
 @media (max-width: 1280px) and (min-width: 1101px) {
   .cr-hero { grid-template-columns: minmax(0, 1fr) minmax(200px, .75fr); grid-template-areas: "main art" "side side"; }

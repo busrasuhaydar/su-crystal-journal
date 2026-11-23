@@ -17,10 +17,11 @@ const KINDS: Record<string, Kind> = {
 
 export const crystal = {
   turn: { start: 0, dir: 1, active: false },
-  pulse(dir: 1 | -1) { this.turn = { start: performance.now(), dir, active: true }; wake(); },
+  pulse(dir: 1 | -1) { this.turn = { start: performance.now(), dir, active: true }; poke(); },
 };
 
 let wake = () => {};
+let poke = () => {};
 
 function compile(gl: WebGL2RenderingContext, type: number, src: string) {
   const s = gl.createShader(type)!;
@@ -87,10 +88,10 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
 
   // ışık: fareyi yumuşakça izler; dokunmatikte yavaşça döner
   const light = { x: innerWidth * 0.25, y: -80, tx: innerWidth * 0.25, ty: -80 };
-  const onMove = (e: PointerEvent) => { if (e.pointerType === 'mouse') { light.tx = e.clientX; light.ty = e.clientY - 40; wake(); } };
+  const onMove = (e: PointerEvent) => { lastInput = performance.now(); if (e.pointerType === 'mouse') { light.tx = e.clientX; light.ty = e.clientY - 40; wake(); } };
   addEventListener('pointermove', onMove, { passive: true });
 
-  let raf = 0, lastSky = -1e9, lastFrame = 0, running = true, ready = false;
+  let raf = 0, lastSky = -1e9, lastFrame = 0, running = true, ready = false, lastInput = performance.now();
   const t0 = performance.now();
 
   function measure() {
@@ -129,7 +130,9 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     raf = 0;
     if (!running) return;
     const still = reduce();
-    const fps = coarse ? 24 : 30;
+    // etkileşim yokken (8 sn) kare hızı yarıya iner: pil ve ısı tasarrufu
+    const idle = now - lastInput > 8000;
+    const fps = (coarse ? 24 : 30) / (idle ? 2 : 1);
     if (!still && now - lastFrame < 1000 / fps - 2) { raf = requestAnimationFrame(frame); return; }
     lastFrame = now;
     const t = (now - t0) / 1000;
@@ -137,7 +140,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     if (coarse && !still) { light.tx = innerWidth * (0.5 + 0.35 * Math.sin(t * 0.25)); light.ty = innerHeight * (0.15 + 0.1 * Math.cos(t * 0.31)); }
     const g = gl!;
     // gökyüzü
-    if (now - lastSky > (still ? 1e12 : 85) || lastSky < 0) {
+    if (now - lastSky > (still ? 1e12 : idle ? 170 : 85) || lastSky < 0) {
       lastSky = now;
       g.bindFramebuffer(g.FRAMEBUFFER, fbo);
       g.viewport(0, 0, skyW, skyH);
@@ -168,6 +171,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     if (!still || crystal.turn.active || settling) raf = requestAnimationFrame(frame);
   }
   wake = () => { if (!raf && running) raf = requestAnimationFrame(frame); };
+  poke = () => { lastInput = performance.now(); wake(); };
 
   const onResize = () => { resize(); wake(); };
   const onVis = () => { running = !document.hidden; if (running) wake(); };
@@ -175,7 +179,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   const ro = new ResizeObserver(() => wake());
   const mo = new MutationObserver(() => { for (const el of document.querySelectorAll('[data-glass]')) ro.observe(el); wake(); });
   mo.observe(document.body, { childList: true, subtree: true });
-  const onScroll = () => wake();
+  const onScroll = () => { lastInput = performance.now(); wake(); };
   document.addEventListener('scroll', onScroll, { capture: true, passive: true });
   addEventListener('resize', onResize);
   document.addEventListener('visibilitychange', onVis);
