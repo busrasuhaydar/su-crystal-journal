@@ -101,7 +101,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
       const k = KINDS[el.dataset.glass!];
       if (!k) continue;
       const b = el.getBoundingClientRect();
-      if (b.width < 2 || b.height < 2 || el.offsetParent === null) continue;
+      if (b.width < 2 || b.height < 2 || !el.getClientRects().length) continue;
       const css = getComputedStyle(el);
       const rad = parseFloat(css.borderTopLeftRadius) || k.r;
       rects.set([b.left, b.top, b.width, b.height], n * 4);

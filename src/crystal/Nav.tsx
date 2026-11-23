@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   BookOpen, CalendarDays, CalendarHeart, CalendarPlus, CheckSquare, Files, FolderHeart, Gem, Home, Images, Landmark, Lightbulb, ListPlus,
-  LogOut, Megaphone, Pin, PinOff, Plus, Search, Settings, Sparkles, Users, X, type LucideIcon, BellRing, NotebookPen,
+  LogOut, Megaphone, Pin, Plus, Search, Settings, Sparkles, Users, X, type LucideIcon, BellRing, NotebookPen,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getPref, setPref } from '../lib/prefs';
@@ -143,7 +143,7 @@ export function IndexSheet({ onClose, pins, setPins }: { onClose: () => void; pi
                 <span className="cr-ix-t"><b>{n.label}</b><small>{n.hint}</small></span>
               </Link>
               <button type="button" className={`cr-pin${pinned ? ' on' : ''}`} aria-pressed={pinned} aria-label={pinned ? `${n.label} doktan kaldır` : `${n.label} doka sabitle`} title={pinned ? 'Doktan kaldır' : 'Alt çubuğa sabitle'} onClick={() => togglePin(n.match)}>
-                {pinned ? <Pin size={15} /> : <PinOff size={15} />}
+                <Pin size={15} fill={pinned ? 'currentColor' : 'none'} />
               </button>
             </div>
           );
