@@ -53,28 +53,44 @@ export function glassTap(strength = 1) {
 }
 
 /** Sayfa çevirme: kâğıt hışırtısı (bant geçiren süpürme) + sonda yaprağın düşüş "fıp"ı. */
-export function pageFlip(dur = 0.62) {
+/** Gerçekçi sayfa sesi: kâğıdın havayı yarışı (yumuşak, alçak "fşş"), yaprak bükülürken tanecikli hışırtı,
+ *  inerken çok hafif tok dokunuş. Tiz ve yüksek değil; rastgele taneciklerle her çevirme biraz farklı duyulur. */
+export function pageFlip(dur = 0.9) {
   const c = ac(); if (!c || !master || !noise) return;
-  const now = c.currentTime;
-  const s = c.createBufferSource(), bp = c.createBiquadFilter(), hp = c.createBiquadFilter(), e = c.createGain();
-  s.buffer = noise;
-  bp.type = 'bandpass'; bp.Q.value = 0.9;
-  bp.frequency.setValueAtTime(900, now);
-  bp.frequency.exponentialRampToValueAtTime(3800, now + dur * 0.55);
-  bp.frequency.exponentialRampToValueAtTime(1400, now + dur);
-  hp.type = 'highpass'; hp.frequency.value = 380;
-  e.gain.setValueAtTime(0.0001, now);
-  e.gain.exponentialRampToValueAtTime(0.32, now + dur * 0.18);
-  e.gain.linearRampToValueAtTime(0.22, now + dur * 0.6);
-  e.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  s.connect(bp); bp.connect(hp); hp.connect(e); e.connect(master);
-  s.start(now, Math.random() * 0.3); s.stop(now + dur + 0.05);
-  // yaprak yerine otururken yumuşak tok ses
-  const t = now + dur * 0.82;
-  const s2 = c.createBufferSource(), lp = c.createBiquadFilter(), e2 = c.createGain();
-  s2.buffer = noise; lp.type = 'lowpass'; lp.frequency.value = 700;
-  e2.gain.setValueAtTime(0.0001, t); e2.gain.exponentialRampToValueAtTime(0.4, t + 0.012); e2.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
-  s2.connect(lp); lp.connect(e2); e2.connect(master); s2.start(t, 0.5); s2.stop(t + 0.15);
+  const now = c.currentTime + 0.01;
+  const out = c.createGain(); out.gain.value = 0.55; out.connect(master);
+  // 1) hava süpürmesi: alçak geçiren gürültü, çan eğrisi
+  {
+    const s = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = noise; lp.type = 'lowpass'; lp.Q.value = 0.4;
+    lp.frequency.setValueAtTime(500, now); lp.frequency.linearRampToValueAtTime(1500, now + dur * 0.45); lp.frequency.linearRampToValueAtTime(600, now + dur);
+    g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(0.16, now + dur * 0.4); g.gain.exponentialRampToValueAtTime(0.0001, now + dur * 0.95);
+    s.connect(lp); lp.connect(g); g.connect(out); s.start(now, Math.random() * 0.4); s.stop(now + dur + 0.05);
+  }
+  // 2) kâğıt hışırtısı: bant geçiren gürültü + rastgele kısa tanecikler (bükülme anında yoğun)
+  {
+    const s = c.createBufferSource(), hp = c.createBiquadFilter(), bp = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = noise; hp.type = 'highpass'; hp.frequency.value = 1400; bp.type = 'bandpass'; bp.Q.value = 0.6; bp.frequency.value = 3200;
+    g.gain.setValueAtTime(0.0001, now);
+    const ks = Array.from({ length: 16 }, () => Math.pow(Math.random(), 0.8) * 0.75).sort((a, b) => a - b);   // ilk %75'e yayılır
+    let free = now;
+    for (const k of ks) {
+      if (now + dur * k < free) continue;                       // üst üste binmesin
+      const t = now + dur * k, len = 0.012 + Math.random() * 0.03;
+      const amp = (0.02 + Math.random() * 0.05) * Math.sin(Math.PI * Math.min(1, k / 0.75));
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(Math.max(0.0002, amp), t + len * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      free = t + len + 0.004;
+    }
+    s.connect(hp); hp.connect(bp); bp.connect(g); g.connect(out); s.start(now, Math.random() * 0.5); s.stop(now + dur + 0.05);
+  }
+  // 3) yaprak yerine otururken yumuşak, alçak dokunuş
+  {
+    const t = now + dur * 0.92;
+    const s = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = noise; lp.type = 'lowpass'; lp.frequency.value = 320;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.11);
+    s.connect(lp); lp.connect(g); g.connect(out); s.start(t, Math.random() * 0.5); s.stop(t + 0.14);
+  }
 }
 
 /** Her dokunulabilir öğeye cam sesi. Bir kez kurulur. */

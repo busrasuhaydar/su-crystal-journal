@@ -958,3 +958,26 @@ html.zm .cb-turn-cast { display: none !important; }
 .cb-corner:hover .tip { opacity: .9; }
 @media (max-width: 760px) { .cb-corner { display: none; } }
 .cb-corner .tip { display: flex; align-items: center; gap: 2px; }
+
+/* ═══ Sayfa çevirme v4: kıvrılan buzlu kristal yaprak (pageTurn.ts) ═══ */
+.cl-leaf { position: fixed; pointer-events: none; transform-origin: left center; transform-style: preserve-3d; will-change: transform, opacity; }
+.cl-seg { position: absolute; top: 0; height: 100%; transform-origin: left center; transform-style: preserve-3d; }
+.cl-face { position: absolute; inset: 0; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+/* ön yüz: sayfanın kendisi gibi buzlu cam — altındaki sayfa buzun arkasında yumuşakça görünür, opak beyaz değil */
+.cl-face.front { background: linear-gradient(160deg, rgba(255,252,254,.9), rgba(255,242,250,.84) 55%, rgba(246,238,255,.87));
+  backdrop-filter: blur(16px) saturate(1.5) brightness(1.04); -webkit-backdrop-filter: blur(16px) saturate(1.5) brightness(1.04);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.6); }
+/* arka yüz: boş buzlu kristal sayfa, ince çizgiler, cilde doğru gölge */
+.cl-face.back { transform: rotateY(180deg); background:
+  repeating-linear-gradient(180deg, rgba(212,42,134,0) 0 31px, rgba(212,42,134,.1) 31px 32px),
+  linear-gradient(200deg, rgba(255,242,250,.9), rgba(242,234,255,.88));
+  backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4); }
+.cl-shade { position: absolute; inset: 0; pointer-events: none; }
+.cl-edge { position: absolute; top: 0; bottom: 0; right: 0; width: 3px; pointer-events: none;
+  background: linear-gradient(180deg, #fff, rgba(200,230,255,.9) 30%, #fff 55%, rgba(255,200,235,.9) 80%, #fff); box-shadow: 0 0 10px 2px rgba(255,255,255,.8); }
+.cl-cast { position: fixed; pointer-events: none; opacity: 0; --x: 100%;
+  background: linear-gradient(90deg, rgba(70,10,60,0) 0, rgba(70,10,60,0) var(--x), rgba(70,10,60,.34) var(--x), rgba(70,10,60,.12) calc(var(--x) + 40px), rgba(70,10,60,0) calc(var(--x) + 140px)); }
+.cl-under { position: fixed; pointer-events: none; overflow: hidden; }
+.cb-right.cl-hide > * { visibility: hidden; }
+.cl-leaf .cb-clone, .cl-under .cb-clone { display: flex; flex-direction: column; }
+.cl-leaf .main > *, .cl-under .main > *, .cl-leaf .home-grid > * { animation: none !important; }

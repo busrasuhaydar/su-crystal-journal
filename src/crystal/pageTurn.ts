@@ -1,12 +1,20 @@
-// Gerçekçi sayfa çevirme: yönlendirici yeni sayfayı çizmeden hemen önce eski sayfanın DOM kopyası alınır,
-// kopya cilt (sol kenar) etrafında 3B döner; arka yüzü boş kristal sayfadır, kıvrım gölgesi ve parıltı taşır.
-// Geri gidişte yeni sayfa soldan çevrilerek gelir. Yalnız transform/opacity → GPU. Hareketi azalt/sade modda kapalı.
+// Gerçekçi sayfa çevirme (kıvrılan kristal yaprak).
+// Yönlendirici yeni sayfayı çizmeden hemen önce sağ sayfanın DOM kopyası alınır. Yaprak, cilde bağlı iç içe 5 dilimden
+// oluşur: her dilim bir öncekinin ucuna menteşelidir; dönüş sırasında dilimler kademeli büküldüğü için yaprak kâğıt gibi
+// kıvrılır, yere inerken düzleşir. Her dilim açısına göre gölgelenir/parlar, arka yüzü buzlu kristal sayfadır,
+// alttaki sayfaya yaprağın kenarını izleyen gölge düşer. Yaprak yüzü buzlu yarı saydam camdır (opak beyaz değil).
+// Animasyon rAF ile yalnız transform/opacity günceller. Hareketi azalt / sade / zoom modunda kapalı.
 import { crystal } from './scene';
 import { pageFlip } from './sound';
 import { NAV, isActive } from './Nav';
 
-const off = () => document.documentElement.classList.contains('simple') || matchMedia('(prefers-reduced-motion: reduce)').matches;
-let pending: { leaf: HTMLElement; dir: 1 | -1 } | null = null;
+const off = () => {
+  const c = document.documentElement.classList;
+  return c.contains('simple') || c.contains('zm') || matchMedia('(prefers-reduced-motion: reduce)').matches;
+};
+type Snap = { tpl: HTMLElement; scrollTop: number; dir: 1 | -1 };
+let pending: Snap | null = null;
+let running: (() => void) | null = null;
 let lastPath = location.pathname;
 let lastIdx = (history.state as { idx?: number } | null)?.idx ?? 0;
 const navOf = (path: string) => NAV.findIndex((n) => isActive(path, n));
@@ -17,32 +25,16 @@ function dirBetween(from: string, to: string, fallback: 1 | -1): 1 | -1 {
   return fallback;
 }
 
-/** .cb-right sayfasının o anki hâlinden çevrilebilir yaprak üretir (ön yüz = sayfa kopyası, arka yüz = boş kristal sayfa). */
-function makeLeaf(host: HTMLElement, dir: 1 | -1, scrollTop: number) {
-  const r = host.getBoundingClientRect();
-  const leaf = document.createElement('div');
-  leaf.className = `cb-leaf ${dir > 0 ? 'fwd' : 'back'}`;
-  leaf.setAttribute('aria-hidden', 'true');
-  leaf.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:${getComputedStyle(host).borderTopLeftRadius}`;
-  const front = document.createElement('div');
-  front.className = 'cb-leaf-front';
-  // sağ sayfanın tamamı (başlık + içerik) kopyalanır; kaydırma konumu korunur
-  const clone = host.cloneNode(true) as HTMLElement;
-  clone.removeAttribute('data-glass');
-  clone.removeAttribute('style');
-  clone.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
-  clone.querySelectorAll('[data-glass]').forEach((n) => n.removeAttribute('data-glass'));
-  clone.className = 'cb-clone';
-  const cs = clone.querySelector<HTMLElement>('.cb-scroll');
-  cs?.classList.replace('cb-scroll', 'cb-clone-scroll');
-  front.appendChild(clone);
-  const shade = document.createElement('div'); shade.className = 'cb-leaf-shade';
-  front.appendChild(shade);
-  const back = document.createElement('div'); back.className = 'cb-leaf-back';
-  leaf.append(front, back);
-  (document.querySelector('.cb-stage') ?? document.body).appendChild(leaf);
-  if (cs) cs.scrollTop = scrollTop;
-  return leaf;
+/** Sağ sayfanın (başlık + içerik) etkileşimsiz kopyası. */
+function cloneHost(host: HTMLElement) {
+  const c = host.cloneNode(true) as HTMLElement;
+  c.removeAttribute('data-glass'); c.removeAttribute('style');
+  c.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+  c.querySelectorAll('[data-glass]').forEach((n) => n.removeAttribute('data-glass'));
+  c.querySelectorAll('.cb-corner').forEach((n) => n.remove());
+  c.className = 'cb-clone';
+  c.querySelector('.cb-scroll')?.classList.replace('cb-scroll', 'cb-clone-scroll');
+  return c;
 }
 
 function snapshot(dir: 1 | -1) {
@@ -50,8 +42,8 @@ function snapshot(dir: 1 | -1) {
   const page = document.querySelector<HTMLElement>('.cb-scroll');
   const host = document.querySelector<HTMLElement>('.cb-right');
   if (!page || !host) return;
-  pending?.leaf.remove();
-  pending = { leaf: makeLeaf(host, dir, page.scrollTop), dir };
+  running?.();
+  pending = { tpl: cloneHost(host), scrollTop: page.scrollTop, dir };
 }
 
 function onPath(next: string, dir: 1 | -1) {
@@ -69,7 +61,6 @@ export function installPageTurn() {
     lastIdx = (data as { idx?: number } | null)?.idx ?? lastIdx + 1;
     push(data, unused, url);
   };
-  // popstate: bu dinleyici yönlendiriciden önce eklenir → önce o çalışır. Tarayıcı ileri/geri: history idx'ine göre yön
   addEventListener('popstate', () => {
     const idx = (history.state as { idx?: number } | null)?.idx ?? lastIdx - 1;
     const dir: 1 | -1 = idx > lastIdx ? 1 : -1;
@@ -78,86 +69,128 @@ export function installPageTurn() {
   });
 }
 
-/** Çevrilen yaprağın altındaki sayfaya düşen gölge (cilde yakın koyulaşır, yaprak kalkınca yayılır). */
-function makeCast(host: HTMLElement, z: number) {
-  const r = host.getBoundingClientRect();
-  const c = document.createElement('div');
-  c.className = 'cb-turn-cast';
-  c.setAttribute('aria-hidden', 'true');
-  c.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;z-index:${z};border-radius:${getComputedStyle(host).borderTopLeftRadius}`;
-  (document.querySelector('.cb-stage') ?? document.body).appendChild(c);
-  return c;
+// ── kıvrılan yaprak ──
+const FR = [0.4, 0.12, 0.1, 0.1, 0.1, 0.09, 0.09];          // dilim genişlikleri (cilt → uç)
+const BEND = [0, 5, 7, 9, 11, 13, 15];                     // en çok bükülme (derece), uca doğru artar
+
+type Face = { el: HTMLElement; shade: HTMLElement };
+type Leaf = { root: HTMLElement; segs: HTMLElement[]; fronts: Face[]; backs: Face[] };
+
+function buildLeaf(rect: DOMRect, radius: string, content: HTMLElement, scrollTop: number, z: number): Leaf {
+  const stage = document.querySelector('.cb-stage') ?? document.body;
+  const root = document.createElement('div');
+  root.className = 'cl-leaf'; root.setAttribute('aria-hidden', 'true');
+  root.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;z-index:${z}`;
+  const segs: HTMLElement[] = [], fronts: Face[] = [], backs: Face[] = [];
+  let parent: HTMLElement = root, x0 = 0, prevW = 0;
+  FR.forEach((f, i) => {
+    const w = rect.width * f;
+    const last = i === FR.length - 1;
+    const seg = document.createElement('div');
+    seg.className = 'cl-seg';
+    // komşu dilimler arasında kıl payı örtüşme: kıvrımda ince çizgi/boşluk görünmesin
+    seg.style.cssText = `left:${i ? prevW - 0.5 : 0}px;width:${w + (last ? 0 : 1)}px`;
+    const mk = (cls: string): Face => {
+      const el = document.createElement('div'); el.className = `cl-face ${cls}`;
+      const shade = document.createElement('div'); shade.className = 'cl-shade';
+      return { el, shade };
+    };
+    const fr = mk('front'), bk = mk('back');
+    const c = i === 0 ? content : (content.cloneNode(true) as HTMLElement);
+    c.style.cssText = `position:absolute;top:0;left:${-(x0 - (i ? 0.5 * i : 0))}px;width:${rect.width}px;height:${rect.height}px`;
+    fr.el.append(c, fr.shade); bk.el.append(bk.shade);
+    if (i === 0) { fr.el.style.borderRadius = `${radius} 0 0 ${radius}`; bk.el.style.borderRadius = `0 ${radius} ${radius} 0`; }
+    if (last) {
+      fr.el.style.borderRadius = `0 ${radius} ${radius} 0`; bk.el.style.borderRadius = `${radius} 0 0 ${radius}`;
+      const ed = document.createElement('div'); ed.className = 'cl-edge'; fr.el.appendChild(ed);
+    }
+    seg.append(fr.el, bk.el);
+    parent.appendChild(seg);
+    segs.push(seg); fronts.push(fr); backs.push(bk);
+    parent = seg; x0 += w; prevW = w;
+  });
+  stage.appendChild(root);
+  root.querySelectorAll<HTMLElement>('.cb-clone-scroll').forEach((s) => { s.scrollTop = scrollTop; });
+  return { root, segs, fronts, backs };
 }
 
-/** Yaprağı cilt etrafında çevirir. from/to: açı (0 = sağ sayfada düz, -180 = sola kapanmış).
- *  Gerçekçilik: yaprak ortada hafifçe kalkar (translateZ) ve kıvrılır (skew/scale), yüzeyinde ışık bandı kayar,
- *  dış kenarında parıltı, altındaki sayfaya gölge düşer; sol sayfayı (menüyü) örtmemek için uçta söner. */
-function turn(leaf: HTMLElement, from: number, to: number, dur: number, narrow: boolean, cast: HTMLElement) {
-  const persp = `perspective(${narrow ? 1200 : 2400}px)`;
-  const fwd = to < from;
-  const ang = (k: number) => from + (to - from) * k;
-  const lift = narrow ? 18 : 42;
-  const curl = fwd ? -1 : 1;
-  const T = (k: number, z: number, sk: number, sx: number) => `${persp} rotateY(${ang(k)}deg) translateZ(${z}px) skewY(${sk * curl}deg) scaleX(${sx})`;
-  const frames: Keyframe[] = [
-    { transform: T(0, 0, 0, 1), opacity: fwd ? 1 : 0 },
-    { transform: T(0.12, lift * 0.4, 0.8, 0.995), opacity: 1, offset: 0.12 },
-    { transform: T(0.35, lift, 1.8, 0.975), opacity: 1, offset: 0.35 },
-    { transform: T(0.6, lift * 0.85, 1.2, 0.97), opacity: 1, offset: 0.6 },
-    { transform: T(0.86, lift * 0.3, 0.4, 0.99), opacity: fwd ? 1 : 1, offset: 0.86 },
-    { transform: T(1, 0, 0, 1), opacity: fwd ? 0 : 1 },
-  ];
-  if (!fwd) { frames[1].opacity = 1; frames[0].opacity = 0; }
-  const ease = 'cubic-bezier(.55,.06,.25,1)';
-  const a = leaf.animate(frames, { duration: dur, easing: ease, fill: 'forwards' });
-  const shade = leaf.querySelector<HTMLElement>('.cb-leaf-shade')!;
-  // ışık bandı yaprak yüzeyinde cilde doğru kayar; yaprak dikleşince yüzey kararır
-  shade.animate(fwd
-    ? [{ opacity: 0, backgroundPosition: '100% 0' }, { opacity: 1, offset: 0.4 }, { opacity: 0.85, backgroundPosition: '0% 0' }]
-    : [{ opacity: 0.85, backgroundPosition: '0% 0' }, { opacity: 1, offset: 0.6 }, { opacity: 0, backgroundPosition: '100% 0' }],
-    { duration: dur, easing: ease, fill: 'forwards' });
-  const front = leaf.querySelector<HTMLElement>('.cb-leaf-front')!;
-  front.animate(fwd
-    ? [{ filter: 'brightness(1)' }, { filter: 'brightness(1.1)', offset: 0.25 }, { filter: 'brightness(.82)' }]
-    : [{ filter: 'brightness(.82)' }, { filter: 'brightness(1.1)', offset: 0.75 }, { filter: 'brightness(1)' }], { duration: dur, easing: ease });
-  const edge = document.createElement('div'); edge.className = 'cb-leaf-edge'; front.appendChild(edge);
-  edge.animate([{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }], { duration: dur, easing: ease, fill: 'forwards' });
-  cast.animate(fwd
-    ? [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0.55, offset: 0.7 }, { opacity: 0 }]
-    : [{ opacity: 0 }, { opacity: 0.55, offset: 0.3 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }], { duration: dur, easing: ease, fill: 'forwards' });
-  return a;
+const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const D2R = Math.PI / 180;
+
+/** p: 0 = yaprak sağda düz, 1 = sola kapanmış. Yaprağı, dilim gölgelerini ve düşen gölgeyi bu duruma getirir. */
+function pose(L: Leaf, p: number, end: number, persp: number, cast: HTMLElement, W: number) {
+  const theta = end * p;
+  const flex = Math.pow(Math.sin(Math.PI * p), 1.1);  // ortada en çok kıvrım, başta/sonda düz
+  L.root.style.transform = `perspective(${persp}px) rotateY(${theta.toFixed(2)}deg) translateZ(${(30 * flex).toFixed(1)}px)`;
+  let phi = theta, pd = -1, pg = 0;
+  for (let i = 0; i < L.segs.length; i++) {
+    const b = BEND[i] * flex;                          // uç geride kalır: yaprak hava direnciyle bombeleşir
+    phi += b;
+    if (i) L.segs[i].style.transform = `rotateY(${b.toFixed(2)}deg)`;
+    const tilt = 1 - Math.abs(Math.cos(phi * D2R));   // 0 düz, 1 dik
+    const dark = Math.min(0.42, tilt * 0.46);
+    const glint = Math.max(0, -Math.sin(2 * phi * D2R)) * 0.2 * flex;   // 30-60° arası ince parlama
+    if (pd < 0) { pd = dark; pg = glint; }
+    // dilimden dilime yumuşak geçiş: her dilimin gölgesi bir öncekinin değerinden başlar → ek yeri görünmez
+    L.fronts[i].shade.style.background = `linear-gradient(90deg, rgba(255,255,255,${pg.toFixed(3)}), rgba(255,255,255,${glint.toFixed(3)})), linear-gradient(90deg, rgba(70,12,60,${pd.toFixed(3)}), rgba(70,12,60,${dark.toFixed(3)}))`;
+    L.backs[i].shade.style.background = `linear-gradient(270deg, rgba(70,12,60,${(pd * 0.85).toFixed(3)}), rgba(70,12,60,${(dark * 0.85).toFixed(3)}))`;
+    pd = dark; pg = glint;
+  }
+  // alttaki sayfaya düşen gölge: yaprağın izdüşüm kenarını izler
+  cast.style.setProperty('--x', `${Math.max(0, W * Math.cos(theta * D2R)).toFixed(1)}px`);
+  cast.style.opacity = (Math.sin(Math.PI * p) * 0.9).toFixed(3);
+  // sol sayfayı (menüyü) örtmemek için son %20'de söner
+  L.root.style.opacity = p > 0.8 ? Math.max(0, (1 - p) / 0.2).toFixed(3) : '1';
 }
 
 /** Yeni sayfa DOM'a yerleşince (useLayoutEffect) çağrılır: animasyonu oynatır. */
 export function playPageTurn() {
-  const p = pending;
+  const snap = pending;
   pending = null;
   const page = document.querySelector<HTMLElement>('.cb-scroll');
   if (page) page.scrollTop = 0;
-  if (!p) return;
-  const { leaf, dir } = p;
+  if (!snap) return;
   const host = document.querySelector<HTMLElement>('.cb-right');
-  if (!host) { leaf.remove(); return; }
+  if (!host) return;
+  const rect = host.getBoundingClientRect();
+  const radius = getComputedStyle(host).borderTopLeftRadius || '20px';
   const narrow = innerWidth < 761;
-  crystal.pulse(dir);
-  pageFlip(narrow ? 0.56 : 0.7);
-  const dur = narrow ? 760 : 980;
-  const end = narrow ? -160 : -178;
-  if (dir > 0) {
-    // ileri: eski sayfa cilt etrafında sola çevrilir, altından yeni sayfa görünür
-    leaf.style.zIndex = '26';
-    const cast = makeCast(host, 25);
-    const a = turn(leaf, 0, end, dur, narrow, cast);
-    const done = () => { leaf.remove(); cast.remove(); };
-    a.onfinish = done; a.oncancel = done;
+  const end = narrow ? -165 : -179;
+  const persp = narrow ? 1300 : 2600;
+  const dur = narrow ? 820 : 1050;
+  const stage = document.querySelector('.cb-stage') ?? document.body;
+  crystal.pulse(snap.dir);
+  pageFlip(dur / 1000);
+
+  const box = (cls: string, z: number) => {
+    const d = document.createElement('div'); d.className = cls; d.setAttribute('aria-hidden', 'true');
+    d.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;z-index:${z};border-radius:${radius}`;
+    stage.appendChild(d); return d;
+  };
+  const cast = box('cl-cast', 25);
+  let leaf: Leaf, under: HTMLElement | null = null;
+  if (snap.dir > 0) {
+    // ileri: eski sayfa kıvrılarak sola çevrilir; altında yeni sayfa
+    leaf = buildLeaf(rect, radius, snap.tpl, snap.scrollTop, 26);
   } else {
-    // geri: eski sayfa sağda kalır, soldaki yaprak (yeni sayfa) çevrilip üstüne kapanır
-    leaf.style.zIndex = '24';
-    const cast = makeCast(host, 25);
-    const incoming = makeLeaf(host, -1, 0);
-    incoming.style.zIndex = '26';
-    const a = turn(incoming, end, 0, dur, narrow, cast);
-    const done = () => { leaf.remove(); incoming.remove(); cast.remove(); };
-    a.onfinish = done; a.oncancel = done;
+    // geri: eski sayfa yerinde kalır (kopya), yeni sayfa soldan kıvrılarak gelip üstüne kapanır
+    under = box('cl-under', 24);
+    under.appendChild(snap.tpl);
+    const s = snap.tpl.querySelector<HTMLElement>('.cb-clone-scroll'); if (s) s.scrollTop = snap.scrollTop;
+    leaf = buildLeaf(rect, radius, cloneHost(host), 0, 26);
+    host.classList.add('cl-hide');                      // canlı sayfa yaprak inene kadar gizli: iki sayfa üst üste binmez
   }
+  const t0 = performance.now();
+  let raf = 0;
+  const p0 = snap.dir > 0 ? 0 : 1;
+  const finish = () => { cancelAnimationFrame(raf); leaf.root.remove(); cast.remove(); under?.remove(); host.classList.remove('cl-hide'); running = null; };
+  running = finish;
+  const step = (now: number) => {
+    const t = Math.min(1, (now - t0) / dur);
+    const e = easeInOut(t);
+    pose(leaf, snap.dir > 0 ? e : 1 - e, end, persp, cast, rect.width);
+    if (t < 1) raf = requestAnimationFrame(step); else finish();
+  };
+  pose(leaf, p0, end, persp, cast, rect.width);
+  raf = requestAnimationFrame(step);
 }
