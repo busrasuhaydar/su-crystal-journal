@@ -65,18 +65,18 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   let loaded = false, imgW = 1672, imgH = 941;
   const U = (p: WebGLProgram, n: string) => gl.getUniformLocation(p, n);
   const gu = {
-    sky: U(glassP, 'uSky'), img: U(glassP, 'uImg'), lod: U(glassP, 'uLod'), bgLod: U(glassP, 'uBgLod'), res: U(glassP, 'uRes'), dpr: U(glassP, 'uDpr'), time: U(glassP, 'uTime'), light: U(glassP, 'uLight'), count: U(glassP, 'uCount'),
+    sky: U(glassP, 'uSky'), view: U(glassP, 'uView'), img: U(glassP, 'uImg'), lod: U(glassP, 'uLod'), bgLod: U(glassP, 'uBgLod'), res: U(glassP, 'uRes'), dpr: U(glassP, 'uDpr'), time: U(glassP, 'uTime'), light: U(glassP, 'uLight'), count: U(glassP, 'uCount'),
     rect: U(glassP, 'uRect'), shape: U(glassP, 'uShape'), opt: U(glassP, 'uOpt'), map: U(glassP, 'uMap'), clip: U(glassP, 'uClip'), turn: U(glassP, 'uTurn'),
   };
   const rects = new Float32Array(MAX_SLABS * 4), shapes = new Float32Array(MAX_SLABS * 4), opts = new Float32Array(MAX_SLABS * 4), maps = new Float32Array(MAX_SLABS * 4), clips = new Float32Array(MAX_SLABS * 4);
 
   const coarse = matchMedia('(pointer: coarse)').matches;
   const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('simple');
-  let dpr = 1, W = 0, H = 0, mobile = 0;
+  let dpr = 1, W = 0, H = 0, mobile = 0, viewH = innerHeight, lastW = innerWidth;
   // ekran uv (0..1, sol üst) → görsel uv:  iuv = uv * s + o   ("cover" + odak)
   let cs = { sx: 1, sy: 1, ox: 0, oy: 0 }, lodK = 0, bgLod = 0;
   function layout() {
-    const vw = innerWidth, vh = innerHeight, va = vw / vh, ia = imgW / imgH;
+    const vw = innerWidth, vh = viewH, va = vw / vh, ia = imgW / imgH;
     if (va > ia) { const sy = ia / va; cs = { sx: 1, sy, ox: 0, oy: (1 - sy) * 0.5 }; }
     else { const sx = va / ia; cs = { sx, sy: 1, ox: (1 - sx) * focusX(va), oy: 0 }; }
     const texPerCss = (imgW * cs.sx) / vw;                  // görselin 1 css px'e düşen doku sayısı
@@ -86,7 +86,11 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   function resize() {
     dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.6 : 1.5);
     W = Math.round(innerWidth * dpr); H = Math.round(innerHeight * dpr);
-    canvas.width = W; canvas.height = H;
+    if (canvas.width !== W) canvas.width = W;
+    if (canvas.height !== H) canvas.height = H;
+    // dokunmatikte adres çubuğu kayarken innerHeight değişir: görsel ölçeği en büyük yüksekliğe sabitlenir (zıplama/titreme olmaz)
+    viewH = coarse && innerWidth === lastW ? Math.max(viewH, innerHeight) : innerHeight;
+    lastW = innerWidth;
     mobile = innerWidth < 761 ? 1 : 0;
     setFocus(); layout();
   }
@@ -112,7 +116,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   const onMove = (e: PointerEvent) => { lastInput = performance.now(); if (e.pointerType === 'mouse') { light.tx = e.clientX; light.ty = e.clientY - 40; wake(); } };
   addEventListener('pointermove', onMove, { passive: true });
 
-  let raf = 0, lastFrame = 0, running = true, ready = false, lastInput = performance.now();
+  let scrollUntil = 0, raf = 0, lastFrame = 0, running = true, ready = false, lastInput = performance.now();
   const t0 = performance.now();
 
   function measure() {
@@ -138,21 +142,21 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
         let hh = mobile ? 0.6 : 0.62, ww = hh * ar;
         if (ww > 0.98) { ww = 0.98; hh = ww / ar; }
         const left = Math.min(Math.max(CASTLE.x - ww * (mobile ? 0.5 : 0.8), 0), 1 - ww), top = Math.min(Math.max(CASTLE.base - hh * 0.86, 0), 1 - hh);
-        maps.set([((left - cs.ox) / cs.sx) * innerWidth, ((top - cs.oy) / cs.sy) * innerHeight, (ww / cs.sx) * innerWidth, (hh / cs.sy) * innerHeight], n * 4);
+        maps.set([((left - cs.ox) / cs.sx) * innerWidth, ((top - cs.oy) / cs.sy) * viewH, (ww / cs.sx) * innerWidth, (hh / cs.sy) * viewH], n * 4);
       } else maps.set([0, 0, 0, 0], n * 4);
       n++;
     }
     return n;
   }
 
-  function frame(now: number) {
+  function frame(now: number, force = false) {
     raf = 0;
     if (!running) return;
     const still = reduce();
     // etkileşim yokken (8 sn) kare hızı yarıya iner: pil ve ısı tasarrufu
     const idle = now - lastInput > 8000;
     const fps = (coarse ? 24 : 30) / (idle ? 2 : 1);
-    if (!still && now - lastFrame < 1000 / fps - 2) { raf = requestAnimationFrame(frame); return; }
+    if (!still && !force && now >= scrollUntil && now - lastFrame < 1000 / fps - 2) { raf = requestAnimationFrame(frame); return; }
     lastFrame = now;
     if (!loaded) return;
     const t = (now - t0) / 1000;
@@ -169,7 +173,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     g.viewport(0, 0, W, H);
     g.useProgram(glassP);
     g.activeTexture(g.TEXTURE0); g.bindTexture(g.TEXTURE_2D, tex); g.uniform1i(gu.sky, 0);
-    g.uniform4f(gu.img, cs.sx, cs.sy, cs.ox, cs.oy); g.uniform1f(gu.lod, lodK); g.uniform1f(gu.bgLod, bgLod);
+    g.uniform2f(gu.view, innerWidth, viewH); g.uniform4f(gu.img, cs.sx, cs.sy, cs.ox, cs.oy); g.uniform1f(gu.lod, lodK); g.uniform1f(gu.bgLod, bgLod);
     g.uniform2f(gu.res, W, H); g.uniform1f(gu.dpr, dpr); g.uniform1f(gu.time, still ? 12 : t);
     g.uniform2f(gu.light, light.x, light.y); g.uniform1i(gu.count, n);
     g.uniform4fv(gu.rect, rects); g.uniform4fv(gu.shape, shapes); g.uniform4fv(gu.opt, opts); g.uniform4fv(gu.map, maps); g.uniform4fv(gu.clip, clips);
@@ -182,13 +186,15 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   wake = () => { if (!raf && running) raf = requestAnimationFrame(frame); };
   poke = () => { lastInput = performance.now(); wake(); };
 
-  const onResize = () => { resize(); wake(); };
+  // boyut değişince tuval silinir: aynı görevde hemen yeniden çiz (boş kare görünmesin)
+  const onResize = () => { resize(); if (loaded && running) { cancelAnimationFrame(raf); frame(performance.now(), true); } else wake(); };
   const onVis = () => { running = !document.hidden; if (running) wake(); };
   // düzen değişince (sayfa geçişi, menü açılması) yeniden ölç
   const ro = new ResizeObserver(() => wake());
   const mo = new MutationObserver(() => { for (const el of document.querySelectorAll('[data-glass]')) ro.observe(el); wake(); });
   mo.observe(document.body, { childList: true, subtree: true });
-  const onScroll = () => { lastInput = performance.now(); wake(); };
+  // kaydırırken kare hızı sınırı yok: cam levhalar DOM ile aynı karede ölçülür/çizilir (60 fps içerik, 30 fps cam titremesi olmaz)
+  const onScroll = () => { lastInput = performance.now(); scrollUntil = lastInput + 220; wake(); };
   document.addEventListener('scroll', onScroll, { capture: true, passive: true });
   addEventListener('resize', onResize);
   document.addEventListener('visibilitychange', onVis);

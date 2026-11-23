@@ -1,4 +1,4 @@
-// Kristal defter süsleri: kristal kolye, altın kilit, kurdele, cam kanatlı kelebekler, kiraz dalları, pırıltı, taç yaprakları,
+// Kristal defter süsleri: kristal kolye, altın kilit, kurdele, cam kanatlı kelebekler, pırıltı, taç yaprakları,
 // sayfa kenarı yaprak destesi ve açılış kapağı. Hepsi özgün SVG; animasyonlar yalnız transform/opacity.
 import { useEffect, useRef, useState } from 'react';
 
@@ -58,24 +58,6 @@ const Butterfly = ({ k }: { k: number }) => (
 
 const rnd = (i: number, k: number) => { const x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
 
-/** Kiraz dalı: yollar üzerinde beş yapraklı çiçek kümeleri (deterministik). */
-function Branch({ className, flip }: { className: string; flip?: boolean }) {
-  const pts: [number, number, number][] = [];
-  const seg = [[0, 160, 70, 120], [70, 120, 150, 96], [150, 96, 240, 40], [90, 112, 120, 60], [170, 86, 210, 120]];
-  seg.forEach(([x1, y1, x2, y2], s) => { for (let i = 0; i < 4; i++) { const t = (i + 0.5) / 4; pts.push([x1 + (x2 - x1) * t + (rnd(s * 9 + i, 1) - 0.5) * 22, y1 + (y2 - y1) * t + (rnd(s * 9 + i, 2) - 0.5) * 22, 6 + rnd(s * 9 + i, 3) * 6]); } });
-  return (
-    <svg className={className} viewBox="0 0 260 180" aria-hidden="true" style={flip ? { transform: 'scaleX(-1)' } : undefined}>
-      <path d="M0 160 C40 140 60 124 70 120 S130 100 150 96 S210 60 240 40 M90 112 C100 96 112 76 120 60 M170 86 C184 98 196 108 210 120" stroke="url(#cr-bark)" strokeWidth="4" strokeLinecap="round" fill="none" />
-      {pts.map(([x, y, r], i) => (
-        <g key={i} transform={`translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${Math.round(rnd(i, 5) * 72)})`}>
-          {[0, 72, 144, 216, 288].map((a) => <ellipse key={a} rx={r * 0.55} ry={r} transform={`rotate(${a}) translate(0 ${-r * 0.8})`} fill="url(#cr-petal)" stroke="#fff" strokeWidth=".6" />)}
-          <circle r={r * 0.32} fill="#FFD36B" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
 const SPARKS = Array.from({ length: 14 }, (_, i) => ({ x: Math.round(rnd(i, 1) * 96) + 2, y: Math.round(rnd(i, 2) * 92) + 2, s: 8 + Math.round(rnd(i, 3) * 12), d: (rnd(i, 4) * 4).toFixed(1), t: (2.6 + rnd(i, 5) * 3).toFixed(1) }));
 const PETALS = Array.from({ length: 7 }, (_, i) => ({ x: Math.round(rnd(i, 7) * 100), d: (rnd(i, 8) * 14).toFixed(1), t: (16 + rnd(i, 9) * 10).toFixed(1), s: 9 + Math.round(rnd(i, 10) * 9), r: Math.round(rnd(i, 11) * 360), w: Math.round(30 + rnd(i, 12) * 70) }));
 
@@ -85,8 +67,6 @@ export function Decor() {
     <div className="cr-decor" aria-hidden="true">
       <Defs />
       <div className="cr-edges r" /><div className="cr-edges b" />
-      <Branch className="cr-branch tl" />
-      <Branch className="cr-branch br" flip />
       {SPARKS.map((p, i) => <i key={i} className="cr-spark" style={{ left: `${p.x}%`, top: `${p.y}%`, fontSize: p.s, animationDelay: `${p.d}s`, animationDuration: `${p.t}s` }}>✦</i>)}
       {PETALS.map((p, i) => <i key={i} className="cr-petal" style={{ left: `${p.x}%`, width: p.s, height: p.s * 1.2, animationDelay: `-${p.d}s`, animationDuration: `${p.t}s`, ['--r' as string]: `${p.r}deg`, ['--w' as string]: `${p.w}px` }} />)}
       <Pendant />

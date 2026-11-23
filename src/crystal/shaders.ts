@@ -13,6 +13,7 @@ export const MAX_SLABS = 8;
 export const GLASS = `#version 300 es
 precision highp float;
 uniform sampler2D uSky;   // arkaplan görseli (mipmap'li)
+uniform vec2 uView;       // görsel eşlemesinin dayandığı görünüm boyutu (css px; mobilde adres çubuğuna karşı sabit)
 uniform vec4 uImg;        // ekran uv → görsel uv: (ölçek x, ölçek y, kayma x, kayma y) (cover + odak)
 uniform float uLod;       // buzlanma LOD'una eklenen, görsel çözünürlüğüne göre düzeltme
 uniform float uBgLod;     // arkaplanın kendi LOD'u (küçültme kaynaklı)
@@ -34,7 +35,7 @@ float sdRound(vec2 p, vec2 c, vec2 h, float r) {
   return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;
 }
 vec3 skyAt(vec2 css, float lod) {
-  vec2 iuv = (css / (uRes / uDpr)) * uImg.xy + uImg.zw;
+  vec2 iuv = (css / uView) * uImg.xy + uImg.zw;
   return textureLod(uSky, clamp(iuv, 0.0005, 0.9995), lod).rgb;
 }
 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
