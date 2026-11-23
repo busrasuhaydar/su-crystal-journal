@@ -916,3 +916,19 @@ html.zm .cr-scrim { background: rgba(70,20,60,.45); }
 .cr-index .cr-ix.on { background: linear-gradient(135deg, rgba(255,62,165,.16), rgba(185,140,255,.16)) !important; box-shadow: inset 0 0 0 1.5px rgba(255,62,165,.5), 0 0 16px -6px rgba(255,62,165,.6); }
 /* son açılanlar çiplerinde simge de renkli */
 .cr-recent-row .chip svg { stroke: url(#cr-ic) #B0246F; }
+
+/* ═══ Mücevher renkleri v2: 13 belirgin, birbirine benzemeyen canlı ton (canlı turuncu dahil) — menü, alt çubuk, İçindekiler ═══
+   pembe · turkuaz · turuncu · mor · limon yeşili · mavi · altın · orkide · zümrüt · gök mavisi · oniks · çivit · gümüş */
+.cr-index .cr-ix:nth-child(1), .cr-nav a:nth-child(1), .cr-dock > :nth-child(1) { --g1: #FFB0D9; --g2: #FF2E9A; --g3: #A60056; --gl: #FF2E9AA6; }
+.cr-index .cr-ix:nth-child(2), .cr-nav a:nth-child(2), .cr-dock > :nth-child(2) { --g1: #8AFFF5; --g2: #00C9B8; --g3: #006F65; --gl: #00C9B8A6; }
+.cr-index .cr-ix:nth-child(3), .cr-nav a:nth-child(3), .cr-dock > :nth-child(3) { --g1: #FFC69E; --g2: #FF6A00; --g3: #8C3A00; --gl: #FF6A00A6; }
+.cr-index .cr-ix:nth-child(4), .cr-nav a:nth-child(4), .cr-dock > :nth-child(4) { --g1: #D3B5FF; --g2: #8B3DFF; --g3: #4600AE; --gl: #8B3DFFA6; }
+.cr-index .cr-ix:nth-child(5), .cr-nav a:nth-child(5), .cr-dock > :nth-child(5) { --g1: #D8FF8F; --g2: #8CD600; --g3: #4D7600; --gl: #8CD600A6; }
+.cr-index .cr-ix:nth-child(6), .cr-nav a:nth-child(6) { --g1: #AAC7FF; --g2: #1F6BFF; --g3: #00359D; --gl: #1F6BFFA6; }
+.cr-index .cr-ix:nth-child(7), .cr-nav a:nth-child(7) { --g1: #FFE49E; --g2: #FFB800; --g3: #8C6500; --gl: #FFB800A6; }
+.cr-index .cr-ix:nth-child(8), .cr-nav a:nth-child(8) { --g1: #EBA6F2; --g2: #C21FD1; --g3: #6B1173; --gl: #C21FD1A6; }
+.cr-index .cr-ix:nth-child(9), .cr-nav a:nth-child(9) { --g1: #91F6C2; --g2: #0FB760; --g3: #086535; --gl: #0FB760A6; }
+.cr-index .cr-ix:nth-child(10), .cr-nav a:nth-child(10) { --g1: #98E0FF; --g2: #00A8F0; --g3: #005C84; --gl: #00A8F0A6; }
+.cr-index .cr-ix:nth-child(11), .cr-nav a:nth-child(11) { --g1: #AEA9C6; --g2: #3A3550; --g3: #201D2C; --gl: #3A3550A6; }
+.cr-index .cr-ix:nth-child(12), .cr-nav a:nth-child(12) { --g1: #BBB5EF; --g2: #4B3BD6; --g3: #241A7C; --gl: #4B3BD6A6; }
+.cr-index .cr-ix:nth-child(13), .cr-nav a:nth-child(13) { --g1: #D4D7E2; --g2: #8E95B3; --g3: #474E6A; --gl: #8E95B3A6; }
