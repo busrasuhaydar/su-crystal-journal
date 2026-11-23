@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 import { Bow, Decor, Intro, Ring } from '../crystal/Decor';
 import { CreateSheet, Dock, NAV, isActive, useRecent } from '../crystal/Nav';
 import { playPageTurn } from '../crystal/pageTurn';
-import { HomeIcon, useApplyBackground } from '../crystal/look';
+import { HomeIcon, useApplyBackground, useLookUrl } from '../crystal/look';
 import { NotificationBell } from './NotificationBell';
 import { QuickSearch } from './QuickSearch';
 
@@ -121,6 +121,7 @@ export function Shell() {
   useRecent();
   useLayoutEffect(() => { playPageTurn(); }, [loc.pathname]);
   const [deskNew, setDeskNew] = useState(false);
+  const medalAva = useLookUrl('avatar');
   return (
     <div className="cb-stage">
       <Intro />
@@ -128,7 +129,7 @@ export function Shell() {
         <aside className="cb-left" data-glass="left">
           <Link to="/" className="cr-medal" aria-label="Ana sayfa">
             <Bow className="cr-medal-bow" />
-            <span className="cr-medal-t">Su's<br />Magical<br />Journal</span>
+            {medalAva ? <img className="cr-medal-ava" src={medalAva} alt="" /> : <span className="cr-medal-t">Su's<br />Magical<br />Journal</span>}
           </Link>
           <div className="cr-hello"><b>Merhaba {profile.data?.display_name ?? 'Su'} ♡</b><span>Hayallerin her zaman seninle.</span></div>
           <nav className="cr-nav" aria-label="Ana menü">

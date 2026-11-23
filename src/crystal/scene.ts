@@ -138,6 +138,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   const light = { x: innerWidth * 0.25, y: -80, tx: innerWidth * 0.25, ty: -80 };
   const onMove = (e: PointerEvent) => { lastInput = performance.now(); if (e.pointerType === 'mouse') { light.tx = e.clientX; light.ty = e.clientY - 40; wake(); } };
   addEventListener('pointermove', onMove, { passive: true });
+  for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart']) addEventListener(ev, () => { lastInput = performance.now(); wake(); }, { passive: true, capture: true });
 
   let scrollUntil = 0, raf = 0, lastFrame = 0, running = true, ready = false, lastInput = performance.now();
   const t0 = performance.now();
@@ -179,8 +180,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     if (!running) return;
     const still = reduce();
     // etkileşim yokken (8 sn) kare hızı yarıya iner: pil ve ısı tasarrufu
-    const idle = now - lastInput > 8000;
-    const fps = (coarse ? 24 : 30) / (idle ? 2 : 1);
+    const fps = coarse ? 24 : 30;
     if (!still && !force && now >= scrollUntil && now - lastFrame < 1000 / fps - 2) { raf = requestAnimationFrame(frame); return; }
     lastFrame = now;
     if (!loaded) return;
@@ -206,7 +206,8 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     g.drawArrays(g.TRIANGLES, 0, 3);
     if (!ready) { ready = true; requestAnimationFrame(() => document.documentElement.classList.add('gl-ready')); }
     const settling = Math.abs(light.tx - light.x) + Math.abs(light.ty - light.y) > 0.5;
-    if (!still || crystal.turn.active || settling) raf = requestAnimationFrame(frame);
+    const active = performance.now() - lastInput < 2500;
+    if ((!still && active) || crystal.turn.active || settling) raf = requestAnimationFrame(frame);
   }
   wake = () => { if (!raf && running) raf = requestAnimationFrame(frame); };
   poke = () => { lastInput = performance.now(); wake(); };
