@@ -515,7 +515,7 @@ html.simple .main > *, html.simple .btn-primary::before, html.simple .ha-arch, h
 
 /* ═══ Kasım 2026: titreme/zoom düzeltmeleri, krom şato penceresi, gerçek kristal cam, yapılacaklar planı, pro görüntüleyici ═══ */
 /* sayfa yakınlaştırması kapalı (çift dokunma dahil); tuval adres çubuğu kayarken boyut değiştirmez */
-html, body { touch-action: pan-x pan-y; }
+html, body { touch-action: manipulation; }
 button, a, [role="button"], input, select, textarea, label { touch-action: manipulation; }
 .cr-canvas { bottom: auto; height: 100vh; height: 100lvh; }
 /* özel arkaplan: CSS yedeği de aynı görseli kullanır */

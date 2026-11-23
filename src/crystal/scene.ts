@@ -223,13 +223,27 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
   document.addEventListener('scroll', onScroll, { capture: true, passive: true });
   addEventListener('resize', onResize);
   // tarayıcı menüsünden yakınlaştırma: devicePixelRatio değişince de tuvali yeniden kur
-  const vv = window.visualViewport; vv?.addEventListener('resize', onResize);
+  const vv = window.visualViewport;
+  vv?.addEventListener('resize', onResize);
+  // yakınlaştırma (sıkıştırma ya da tarayıcı zoom'u) sırasında WebGL cam DOM'dan geride kalıp titrer:
+  // zoom varken tuval gizlenir, camlar CSS yedeğiyle çizilir (DOM ile birlikte kayar, bozulmaz); zoom bitince WebGL geri gelir
+  const baseDpr = window.devicePixelRatio || 1;
+  let lost = false, zoomOn = false;
+  const checkZoom = () => {
+    if (lost) return;
+    const z = (vv ? Math.abs(vv.scale - 1) > 0.02 : false) || Math.abs((window.devicePixelRatio || 1) - baseDpr) > 0.02;
+    if (z === zoomOn) return;
+    zoomOn = z;
+    const c = document.documentElement.classList;
+    if (z) c.replace('gl', 'no-gl'); else { c.replace('no-gl', 'gl'); resize(); wake(); }
+  };
+  vv?.addEventListener('resize', checkZoom); addEventListener('resize', checkZoom);
   document.addEventListener('visibilitychange', onVis);
-  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); running = false; document.documentElement.classList.replace('gl', 'no-gl'); });
+  canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); lost = true; running = false; document.documentElement.classList.replace('gl', 'no-gl'); });
   resize(); wake();
   return () => {
     running = false; cancelAnimationFrame(raf);
-    removeEventListener('pointermove', onMove); removeEventListener('resize', onResize); vv?.removeEventListener('resize', onResize);
+    removeEventListener('pointermove', onMove); removeEventListener('resize', onResize); vv?.removeEventListener('resize', onResize); vv?.removeEventListener('resize', checkZoom); removeEventListener('resize', checkZoom);
     document.removeEventListener('visibilitychange', onVis); document.removeEventListener('scroll', onScroll, true); ro.disconnect(); mo.disconnect();
   };
 }
