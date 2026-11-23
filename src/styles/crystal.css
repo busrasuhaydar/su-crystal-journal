@@ -643,3 +643,13 @@ html.simple .btn::after { animation: none; }
   .lb .lb-info h2 { font-size: 24px; line-height: 1.15; }
   .lb > .lb-x { top: max(12px, env(safe-area-inset-top)); right: 12px; }
 }
+
+/* ═══ Yakınlaştırma (sıkıştırma / tarayıcı zoom'u): katman yeniden rasterleme titremesini önle ═══ */
+/* zoom varken backdrop-filter, animasyon, geçiş ve will-change kapalı; 3B dönüşümler düzleşir → düğmeler ve camlar sabit kalır */
+html.zm *, html.zm *::before, html.zm *::after {
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  animation: none !important; transition: none !important; will-change: auto !important;
+  filter: none !important;
+}
+html.zm .cr-canvas { display: none !important; }
+html.zm .cb-leaf { display: none !important; }

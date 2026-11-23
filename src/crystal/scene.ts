@@ -235,6 +235,7 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
     if (z === zoomOn) return;
     zoomOn = z;
     const c = document.documentElement.classList;
+    c.toggle('zm', z);
     if (z) c.replace('gl', 'no-gl'); else { c.replace('no-gl', 'gl'); resize(); wake(); }
   };
   vv?.addEventListener('resize', checkZoom); addEventListener('resize', checkZoom);
