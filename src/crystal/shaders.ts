@@ -113,7 +113,7 @@ vec3 sky(vec2 uv, float horizon) {
   float win;
   float cd = castle(cpos, win);
   float inC = smoothstep(0.003, -0.002, cd);
-  vec3 stone = mix(vec3(0.78, 0.62, 0.90), vec3(1.0, 0.84, 0.92), clamp(0.5 - cpos.x * 4.0, 0.0, 1.0));
+  vec3 stone = mix(vec3(0.66, 0.50, 0.86), vec3(1.0, 0.84, 0.93), clamp(0.5 - cpos.x * 4.0, 0.0, 1.0));
   stone = mix(stone, vec3(0.95, 0.80, 0.98), smoothstep(0.1, 0.3, cpos.y));
   stone = mix(stone, vec3(1.0, 0.95, 0.98), smoothstep(-0.006, 0.0, cd) * 0.6);   // kenar ışıltısı
   stone += vec3(1.0, 0.85, 0.5) * win * (0.6 + 0.4 * sin(uTime * 2.0 + cpos.x * 90.0));
@@ -266,6 +266,7 @@ void main() {
     float lod = S.z * smoothstep(0.0, 1.0, tt);
     vec3 refr = vec3(skyAt(base + offR + mag, lod).r, skyAt(base + offG + mag, lod).g, skyAt(base + offB + mag, lod).b);
 
+    if (M.z > 0.0) { refr = mix(vec3(dot(refr, vec3(0.333))), refr, 1.3); refr = (refr - 0.5) * 1.14 + 0.47; }
     // süt beyazı okunurluk katmanı (kenarda berrak, içte buzlu)
     float milk = S.w * smoothstep(0.15, 1.0, tt);
     vec3 glass = mix(refr * vec3(1.02, 0.98, 1.03), vec3(1.0, 0.965, 0.985), milk);

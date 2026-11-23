@@ -129,6 +129,7 @@ export default function Home() {
       {narrow && <IdeasCard />}
 
       <div className="home-grid">
+        <div className="col">
         <section className="glass panel" hidden={!hp.visible('plan')}>
           <div className="panel-head"><h2>{hp.title('plan', 'Bugünün planı')}</h2><span className="count">{timed.length + untimed.length + allDay.length}</span></div>
           {focus && (
@@ -173,13 +174,15 @@ export default function Home() {
           )}
           <DailyGoal />
         </section>
+        <MiniMonth />
+        </div>
 
         <div className="col">
           <Routines />
           <TodoList />
         </div>
 
-        <div className="col"><MiniMonth /><ArtOfTheDay />{!narrow && <IdeasCard />}</div>
+        <div className="col"><ArtOfTheDay />{!narrow && <IdeasCard />}</div>
 
         <section className="glass panel span-all" hidden={!hp.visible('week')}>
           <div className="panel-head"><h2>{hp.title('week', 'Bu hafta')}</h2><Link className="small" to="/takvim/hafta">Takvim →</Link></div>

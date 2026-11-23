@@ -113,10 +113,11 @@ export function startCrystal(canvas: HTMLCanvasElement): () => void {
       if (el.dataset.glass === 'window') {
         // pencere oranında, şato + ufuk + güneşi çerçeveleyen sahne bölgesi
         const vw = innerWidth, vh = innerHeight;
-        const fx = vw * (mobile ? 0.68 : 0.74), fy = vh * (mobile ? 0.56 : 0.6);
-        let th = vh * (mobile ? 0.36 : 0.46), tw = th * (b.width / b.height);
+        // şato tabanı pencerenin %86 yüksekliğine, masaüstünde sağdaki kristal kartların arkasına (%80) oturur
+        const cx = vw * (mobile ? 0.70 : 0.80), base = vh * (mobile ? 0.61 : 0.67);
+        let th = vh * 0.62, tw = th * (b.width / b.height);
         if (tw > vw * 0.98) { tw = vw * 0.98; th = tw * (b.height / b.width); }
-        const tx = Math.min(Math.max(fx - tw * 0.55, 0), vw - tw), ty = Math.min(Math.max(fy - th * 0.62, 0), vh - th);
+        const tx = Math.min(Math.max(cx - tw * (mobile ? 0.5 : 0.8), 0), vw - tw), ty = Math.min(Math.max(base - th * 0.86, 0), vh - th);
         maps.set([tx, ty, tw, th], n * 4);
       } else maps.set([0, 0, 0, 0], n * 4);
       n++;

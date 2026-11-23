@@ -20,22 +20,21 @@ function snapshot(dir: 1 | -1) {
   leaf.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;border-radius:${getComputedStyle(host).borderTopLeftRadius}`;
   const front = document.createElement('div');
   front.className = 'cb-leaf-front';
-  const clone = page.cloneNode(true) as HTMLElement;
+  // sağ sayfanın tamamı (başlık + içerik) kopyalanır; kaydırma konumu korunur
+  const clone = host.cloneNode(true) as HTMLElement;
+  clone.removeAttribute('data-glass');
   clone.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
   clone.querySelectorAll('[data-glass]').forEach((n) => n.removeAttribute('data-glass'));
-  clone.classList.remove('cb-scroll'); clone.classList.add('cb-clone');
-  clone.style.cssText = `position:absolute;inset:0;overflow:hidden;`;
-  const inner = document.createElement('div');
-  inner.style.cssText = `position:absolute;left:0;right:0;top:${-page.scrollTop}px;`;
-  // .cb-scroll'un kendisini kopyaladık; kaydırma konumunu korumak için içeriği kaydır
-  while (clone.firstChild) inner.appendChild(clone.firstChild);
-  clone.appendChild(inner);
+  clone.className = 'cb-clone';
+  const cs = clone.querySelector<HTMLElement>('.cb-scroll');
+  cs?.classList.replace('cb-scroll', 'cb-clone-scroll');
   front.appendChild(clone);
   const shade = document.createElement('div'); shade.className = 'cb-leaf-shade';
   front.appendChild(shade);
   const back = document.createElement('div'); back.className = 'cb-leaf-back';
   leaf.append(front, back);
   document.body.appendChild(leaf);
+  if (cs) cs.scrollTop = page.scrollTop;
   pending = { leaf, dir };
 }
 
