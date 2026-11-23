@@ -664,3 +664,80 @@ html.zm .cr-hero, html.zm.has-bg .cr-hero {
   background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,236,248,.18) 60%, rgba(255,255,255,.3)) scroll,
     var(--bg-img, url('/arkaplan.webp')) var(--bg-x, 50%) 50% / cover no-repeat fixed !important;
 }
+
+/* ═══════════ Kristal cam + krom (Kasım 2026 v3) ═══════════
+   Her düğme: yarı saydam cam gövde + ince krom bilezik + prizma kenarı (turkuaz/pembe dağılma) + transform ile kayan ışık (GPU, ucuz).
+   Turkuaz öğeler turkuaz krom; pembe birincil düğmeler pembe krom-cam. Yeni backdrop-filter eklenmez (performans). */
+:root {
+  --chrome-silver: linear-gradient(135deg, #fff 0%, #cfd1e6 16%, #6c6f8f 32%, #f7f8ff 48%, #9a9db8 64%, #fff 80%, #b4b6d0 100%);
+  --chrome-teal: linear-gradient(135deg, #f0fffe 0%, #8ff0e8 13%, #077880 29%, #e8fffd 45%, #1fc2bf 59%, #ffffff 71%, #075f67 87%, #b8f6f0 100%);
+  --chrome-pink: linear-gradient(135deg, #fff 0%, #ffc6e4 14%, #a51f68 30%, #fff0f8 46%, #ff6fb8 60%, #ffffff 72%, #b02a78 88%, #ffd9ec 100%);
+  --prism: inset 2px 0 5px -3px rgba(70,235,228,.75), inset -2px 0 5px -3px rgba(255,110,190,.75), inset 0 -2px 6px -4px rgba(150,120,255,.55);
+}
+/* krom bilezik: tüm düğmelerde (::before) */
+.btn::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; padding: 1.3px;
+  background: var(--chrome-silver); opacity: .95; transform: none; animation: none; width: auto;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.btn-ghost::before { display: none; }
+/* kayan kristal ışık: yalnız transform → kompozitörde çalışır */
+.btn::after {
+  inset: -30% auto -30% 0; width: 42%; border-radius: 0;
+  background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,.15) 30%, rgba(255,255,255,.85) 50%, rgba(255,255,255,.15) 70%, transparent 100%);
+  transform: translateX(-170%) skewX(-18deg); animation: cr-glint 6.5s cubic-bezier(.45,0,.2,1) infinite;
+}
+@keyframes cr-glint { 0%, 70% { transform: translateX(-170%) skewX(-18deg); } 100% { transform: translateX(330%) skewX(-18deg); } }
+.btn:active:not(:disabled)::after { animation: none; inset: 0; width: auto; transform: none; background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.8), rgba(255,255,255,0) 62%); }
+
+/* cam düğme: daha şeffaf, prizma kenarlı */
+.btn-glass, .icon-btn.btn-glass {
+  background: linear-gradient(180deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.16) 48%, rgba(255,230,246,.10) 52%, rgba(255,255,255,.34) 100%);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.95), var(--prism), 0 8px 18px -10px rgba(140,30,100,.45), 0 0 0 .5px rgba(160,160,190,.5);
+}
+.btn-glass:hover { background: linear-gradient(180deg, rgba(255,255,255,.8) 0%, rgba(255,255,255,.3) 48%, rgba(255,230,246,.2) 52%, rgba(255,255,255,.5) 100%); }
+
+/* pembe birincil: pembe krom + cam */
+.btn-primary {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.12) 46%, rgba(120,0,60,.10) 54%, rgba(255,255,255,.28) 100%),
+    linear-gradient(135deg, rgba(255,110,190,.92) 0%, rgba(240,60,150,.9) 35%, rgba(196,30,118,.92) 55%, rgba(255,95,176,.9) 75%, rgba(255,150,110,.92) 100%);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.95), inset 0 -2px 4px rgba(110,0,60,.35), var(--prism), 0 10px 22px -10px rgba(200,30,120,.75), 0 0 16px -4px rgba(255,90,180,.6);
+  text-shadow: 0 1px 0 rgba(120,0,60,.35);
+}
+.btn-primary::before { background: var(--chrome-pink); }
+
+/* turkuaz krom: düğmeler, sayaçlar, rozetler */
+.btn-teal, .count {
+  color: #fff; border: 0;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.10) 46%, rgba(0,55,64,.16) 54%, rgba(255,255,255,.36) 100%),
+    linear-gradient(135deg, #8DF4EB 0%, #1CCAC1 28%, #0A8890 50%, #3FE2D8 70%, #0B7A82 100%);
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.95), inset 0 -2px 3px rgba(0,70,80,.45), inset 0 0 0 1px rgba(255,255,255,.3), 0 0 0 1px rgba(8,110,118,.4), 0 8px 18px -8px rgba(14,143,138,.85), 0 0 14px -3px rgba(80,240,230,.6);
+  text-shadow: 0 1px 0 rgba(0,70,80,.5);
+}
+.btn-teal::before { background: var(--chrome-teal); }
+.count { position: relative; overflow: hidden; }
+.count::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: radial-gradient(circle at 26% 18%, rgba(255,255,255,.9) 0 7%, rgba(255,255,255,0) 18%); }
+
+/* simgeler: cam düğmelerde ve menüde pembe krom gradyan, turkuaz düğmede turkuaz */
+.btn-glass svg, .icon-btn svg, .cr-nav a svg, .cr-dock .ic svg, .btn-ghost svg { stroke: url(#cr-ic) #B0246F; }
+.btn-primary svg, .btn-teal svg { stroke: #fff; filter: drop-shadow(0 1px 0 rgba(0,0,0,.18)) drop-shadow(0 0 3px rgba(255,255,255,.6)); }
+.cr-nav a.active svg { stroke: #fff; }
+
+/* cam kapsüller ve kartlar: daha şeffaf + prizma kenarı + krom çizgi (yalnız gölge katmanı; ek bulanıklık yok) */
+.glass, .card, .kcard, .opp-card, .page-card, .nft-card {
+  background: linear-gradient(155deg, rgba(255,255,255,.36), rgba(255,240,250,.12) 45%, rgba(240,230,255,.2));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.7), inset 0 1.5px 0 rgba(255,255,255,.95), var(--prism), 0 0 0 1px rgba(170,172,200,.28), 0 18px 40px -26px rgba(130,30,110,.55);
+}
+.wchip, .chip {
+  background: linear-gradient(180deg, rgba(255,255,255,.58) 0%, rgba(255,255,255,.16) 50%, rgba(255,255,255,.34) 100%);
+  box-shadow: inset 0 1.5px 0 #fff, var(--prism), 0 0 0 1px rgba(255,255,255,.9), 0 0 0 2px rgba(150,155,190,.45), 0 6px 14px -8px rgba(140,30,100,.4);
+}
+html.simple .btn::after, html.zm .btn::after { animation: none; display: none; }
+@media (prefers-reduced-motion: reduce) { .btn::after { display: none; } }
+
+.count { background:
+    linear-gradient(180deg, rgba(255,255,255,.42) 0%, rgba(255,255,255,.06) 46%, rgba(0,55,64,.18) 54%, rgba(255,255,255,.22) 100%),
+    linear-gradient(135deg, #5FE6DC 0%, #12B5AE 28%, #077A82 50%, #24C9C0 70%, #076B73 100%);
+  font-weight: 700; text-shadow: 0 1px 1px rgba(0,50,58,.7); }

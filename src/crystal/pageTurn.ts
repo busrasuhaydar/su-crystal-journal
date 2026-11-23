@@ -17,12 +17,8 @@ function dirBetween(from: string, to: string, fallback: 1 | -1): 1 | -1 {
   return fallback;
 }
 
-function snapshot(dir: 1 | -1) {
-  if (off()) return;
-  const page = document.querySelector<HTMLElement>('.cb-scroll');
-  const host = document.querySelector<HTMLElement>('.cb-right');
-  if (!page || !host) return;
-  pending?.leaf.remove();
+/** .cb-right sayfasının o anki hâlinden çevrilebilir yaprak üretir (ön yüz = sayfa kopyası, arka yüz = boş kristal sayfa). */
+function makeLeaf(host: HTMLElement, dir: 1 | -1, scrollTop: number) {
   const r = host.getBoundingClientRect();
   const leaf = document.createElement('div');
   leaf.className = `cb-leaf ${dir > 0 ? 'fwd' : 'back'}`;
@@ -33,6 +29,7 @@ function snapshot(dir: 1 | -1) {
   // sağ sayfanın tamamı (başlık + içerik) kopyalanır; kaydırma konumu korunur
   const clone = host.cloneNode(true) as HTMLElement;
   clone.removeAttribute('data-glass');
+  clone.removeAttribute('style');
   clone.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
   clone.querySelectorAll('[data-glass]').forEach((n) => n.removeAttribute('data-glass'));
   clone.className = 'cb-clone';
@@ -44,8 +41,17 @@ function snapshot(dir: 1 | -1) {
   const back = document.createElement('div'); back.className = 'cb-leaf-back';
   leaf.append(front, back);
   (document.querySelector('.cb-stage') ?? document.body).appendChild(leaf);
-  if (cs) cs.scrollTop = page.scrollTop;
-  pending = { leaf, dir };
+  if (cs) cs.scrollTop = scrollTop;
+  return leaf;
+}
+
+function snapshot(dir: 1 | -1) {
+  if (off()) return;
+  const page = document.querySelector<HTMLElement>('.cb-scroll');
+  const host = document.querySelector<HTMLElement>('.cb-right');
+  if (!page || !host) return;
+  pending?.leaf.remove();
+  pending = { leaf: makeLeaf(host, dir, page.scrollTop), dir };
 }
 
 function onPath(next: string, dir: 1 | -1) {
@@ -101,22 +107,27 @@ export function playPageTurn() {
     a.onfinish = () => leaf.remove();
     a.oncancel = () => leaf.remove();
   } else {
-    // geri: eski sayfa altta kalır; yeni sayfa cilt tarafından yaprak gibi kalkıp üstüne kapanır (ön yüzü yalnız 90°'den sonra görünür)
-    leaf.style.zIndex = '24';
+    // geri: gerçek defter gibi — eski sayfa sağda sabit kalır, soldaki yaprak (yeni sayfa) cilt etrafında
+    // sağa çevrilip üstüne kapanır. İleri çevirmenin tam aynası; canlı sayfaya (cam ölçülen öğe) dokunulmaz.
     const host = document.querySelector<HTMLElement>('.cb-right');
     if (!host) { leaf.remove(); return; }
-    host.style.transformOrigin = 'left center';
-    host.style.zIndex = '26';
-    const paper = 'rgba(255,247,252,.94)', glass = 'rgba(255,247,252,0)';
-    const a = host.animate([
-      { transform: `perspective(2200px) rotateY(${narrow ? -110 : -165}deg)`, opacity: 0, backgroundColor: paper },
-      { transform: 'perspective(2200px) rotateY(-92deg)', opacity: 0, backgroundColor: paper, offset: 0.4 },
-      { transform: 'perspective(2200px) rotateY(-78deg) skewY(1deg)', opacity: 1, backgroundColor: paper, offset: 0.48 },
-      { transform: 'perspective(2200px) rotateY(-12deg)', opacity: 1, backgroundColor: paper, offset: 0.9 },
-      { transform: 'perspective(2200px) rotateY(0deg)', opacity: 1, backgroundColor: glass },
-    ], { duration: dur, easing: ease });
-    leaf.animate([{ opacity: 1 }, { opacity: 1, offset: 0.46 }, { opacity: 0 }], { duration: dur, easing: 'linear', fill: 'forwards' });
-    const done = () => { leaf.remove(); host.style.zIndex = ''; host.style.transformOrigin = ''; };
+    leaf.style.zIndex = '24';
+    const incoming = makeLeaf(host, -1, 0);
+    incoming.style.zIndex = '25';
+    const start = narrow ? -150 : -172;
+    const persp = `perspective(${narrow ? 1100 : 2200}px)`;
+    const a = incoming.animate([
+      { transform: `${persp} rotateY(${start}deg)`, opacity: 0 },
+      { transform: `${persp} rotateY(${start * 0.85}deg)`, opacity: 1, offset: 0.15 },
+      { transform: `${persp} rotateY(${start * 0.5}deg) skewY(1.2deg) scaleX(.985)`, opacity: 1, offset: 0.5 },
+      { transform: `${persp} rotateY(0deg)`, opacity: 1 },
+    ], { duration: dur, easing: ease, fill: 'forwards' });
+    const inShade = incoming.querySelector<HTMLElement>('.cb-leaf-shade')!;
+    inShade.animate([{ opacity: 0.4 }, { opacity: 0.9, offset: 0.5 }, { opacity: 0 }], { duration: dur, easing: ease, fill: 'forwards' });
+    incoming.querySelector<HTMLElement>('.cb-leaf-front')!.animate([{ filter: 'brightness(.9)' }, { filter: 'brightness(1.08)', offset: 0.65 }, { filter: 'brightness(1)' }], { duration: dur, easing: ease });
+    // yaklaşan yaprağın gölgesi eski sayfaya düşer
+    shade.animate([{ opacity: 0 }, { opacity: 0.25, offset: 0.5 }, { opacity: 0.7 }], { duration: dur, easing: ease, fill: 'forwards' });
+    const done = () => { leaf.remove(); incoming.remove(); };
     a.onfinish = done; a.oncancel = done;
   }
 }

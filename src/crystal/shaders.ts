@@ -38,6 +38,7 @@ vec3 skyAt(vec2 css, float lod) {
   vec2 iuv = (css / uView) * uImg.xy + uImg.zw;
   return textureLod(uSky, clamp(iuv, 0.0005, 0.9995), lod).rgb;
 }
+float ang0(vec2 p, vec2 c) { return atan(p.y - c.y, p.x - c.x); }
 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 
 void main() {
@@ -78,7 +79,7 @@ void main() {
 
     // Snell kırılması: RGB için farklı indis → kenarlarda prizma dağılması
     vec3 I = vec3(0.0, 0.0, -1.0);
-    vec3 rr = refract(I, N, 1.0 / 1.46), rg = refract(I, N, 1.0 / 1.50), rb = refract(I, N, 1.0 / 1.545);
+    vec3 rr = refract(I, N, 1.0 / 1.44), rg = refract(I, N, 1.0 / 1.50), rb = refract(I, N, 1.0 / 1.57);
     float lens = thick * (0.6 + 0.4 * u);
     vec2 offR = rr.xy / max(-rr.z, 0.2) * lens, offG = rg.xy / max(-rg.z, 0.2) * lens, offB = rb.xy / max(-rb.z, 0.2) * lens;
     // iç yüzeyde hafif büyüteç (merkeze doğru)
@@ -91,7 +92,7 @@ void main() {
 
     if (M.z > 0.0) { refr = mix(vec3(dot(refr, vec3(0.333))), refr, 1.3); refr = (refr - 0.5) * 1.14 + 0.47; }
     // süt beyazı okunurluk katmanı (kenarda berrak, içte buzlu)
-    float milk = S.w * smoothstep(0.15, 1.0, tt);
+    float milk = S.w * 0.82 * smoothstep(0.15, 1.0, tt);
     vec3 glass = mix(refr * vec3(1.02, 0.98, 1.03), vec3(1.0, 0.965, 0.985), milk);
     glass += vec3(0.04, 0.02, 0.05) * (1.0 - milk);
 
@@ -101,7 +102,9 @@ void main() {
     float spec = pow(max(dot(N, H), 0.0), 70.0) * (1.0 - N.z) * 4.0;
     float fres = pow(1.0 - N.z, 2.2);
     vec3 irid = 0.5 + 0.5 * cos(6.2831 * (vec3(0.0, 0.33, 0.67) + e * 0.045 + dot(g, L2) * 0.35 + uTime * 0.03));
-    glass += (vec3(1.0) * spec + mix(vec3(1.0), irid, O.w) * fres * 0.55) * O.z;
+    glass += (vec3(1.0) * spec + mix(vec3(1.0), irid, O.w) * fres * 0.7) * O.z;
+    // sihirli ince film: kenar bandında turkuaz↔pembe yanardöner ışıltı
+    glass += mix(vec3(0.35, 1.0, 0.95), vec3(1.0, 0.5, 0.8), 0.5 + 0.5 * sin(ang0(p, c) * 2.0 + uTime * 0.35)) * exp(-pow((e - B * 0.55) / (B * 0.35 + 0.5), 2.0)) * 0.07 * O.z;
     // geniş yüzey parlaması (ışığa göre)
     float sheen = pow(max(0.0, 1.0 - length(p - uLight) / max(R.z, R.w) * 0.9), 2.0);
     glass += vec3(1.0, 0.97, 1.0) * sheen * 0.08 * O.z;

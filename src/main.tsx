@@ -10,6 +10,11 @@ import { startCrystal } from './crystal/scene';
 import { installPageTurn } from './crystal/pageTurn';
 installPageTurn();
 installSounds();
+// krom simge gradyanları (CSS: stroke: url(#cr-ic) yedek renk)
+document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <linearGradient id="cr-ic" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#FF7AC0"/><stop offset=".32" stop-color="#B0246F"/><stop offset=".5" stop-color="#E9479B"/><stop offset=".68" stop-color="#7A1650"/><stop offset="1" stop-color="#D03A8C"/></linearGradient>
+  <linearGradient id="cr-ic-teal" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#5FE8DF"/><stop offset=".35" stop-color="#0B7F86"/><stop offset=".55" stop-color="#2FD6C9"/><stop offset="1" stop-color="#086068"/></linearGradient>
+</defs></svg>`);
 import { queryClient, useRealtime, useSession } from './lib/data';
 import { ToastProvider } from './components/ui';
 import { EditorProvider } from './components/Editors';
