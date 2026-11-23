@@ -882,3 +882,37 @@ html.zm .cr-scrim { background: rgba(70,20,60,.45); }
 .cr-sheet .cr-ix, .cr-sheet .card, .cr-sheet .glass { background: linear-gradient(160deg, rgba(255,255,255,.9), rgba(255,244,250,.78)) !important; }
 /* alt çubuk: Safari araç çubuğu ve ana ekran çizgisinin üstünde kalır */
 @media (max-width: 760px) { .cr-dock { bottom: max(12px, calc(8px + env(safe-area-inset-bottom, 0px))); } }
+
+/* ═══ İçindekiler: her bölüm kendi renginde krom + kristal mücevher (13 farklı Barbie rengi) ═══ */
+.cr-index .cr-ix:nth-child(1) { --g1: #FFC9E6; --g2: #FF3EA5; --g3: #B8006F; --gl: #FF3EA599; }
+.cr-index .cr-ix:nth-child(2) { --g1: #C8FFF9; --g2: #22CFC6; --g3: #077A82; --gl: #22CFC699; }
+.cr-index .cr-ix:nth-child(3) { --g1: #EBDDFF; --g2: #9C72F0; --g3: #5B2FC2; --gl: #9C72F099; }
+.cr-index .cr-ix:nth-child(4) { --g1: #FBE0FF; --g2: #DA70D6; --g3: #8E2A94; --gl: #DA70D699; }
+.cr-index .cr-ix:nth-child(5) { --g1: #D6ECFF; --g2: #4FA3FF; --g3: #1C5FC9; --gl: #4FA3FF99; }
+.cr-index .cr-ix:nth-child(6) { --g1: #FFF2C2; --g2: #F2B52E; --g3: #B57A08; --gl: #F2B52E99; }
+.cr-index .cr-ix:nth-child(7) { --g1: #D8FFE6; --g2: #3FD98A; --g3: #138A50; --gl: #3FD98A99; }
+.cr-index .cr-ix:nth-child(8) { --g1: #FFD6F5; --g2: #F04FD0; --g3: #9C1487; --gl: #F04FD099; }
+.cr-index .cr-ix:nth-child(9) { --g1: #DDF7FF; --g2: #38C6F4; --g3: #0B7FB0; --gl: #38C6F499; }
+.cr-index .cr-ix:nth-child(10) { --g1: #F0E4FF; --g2: #B98CFF; --g3: #6A3FD1; --gl: #B98CFF99; }
+.cr-index .cr-ix:nth-child(11) { --g1: #FFE6F0; --g2: #FF7FB0; --g3: #C2386F; --gl: #FF7FB099; }
+.cr-index .cr-ix:nth-child(12) { --g1: #E0FFF7; --g2: #2EE6C0; --g3: #0C8F78; --gl: #2EE6C099; }
+.cr-index .cr-ix:nth-child(13) { --g1: #E8E8FF; --g2: #7C83FF; --g3: #3A3FC4; --gl: #7C83FF99; }
+.cr-index .cr-ix .cr-gem {
+  box-sizing: border-box; border-radius: 50%; color: #fff; border: 1.6px solid transparent;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.1) 46%, rgba(0,0,0,.12) 54%, rgba(255,255,255,.26) 100%) padding-box,
+    linear-gradient(135deg, var(--g1) 0%, var(--g2) 32%, var(--g3) 56%, var(--g2) 78%, var(--g1) 100%) padding-box,
+    linear-gradient(135deg, #fff 0%, #cfd1e6 16%, #6c6f8f 32%, #f7f8ff 48%, #9a9db8 64%, #fff 80%, #b4b6d0 100%) border-box !important;
+  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.9), inset 0 -2px 4px rgba(0,0,0,.28), inset 2px 0 5px -3px rgba(255,255,255,.7), 0 6px 14px -7px var(--gl), 0 0 12px -5px var(--gl) !important;
+}
+.cr-index .cr-ix .cr-gem svg { stroke: #fff; stroke-width: 2.1; filter: drop-shadow(0 1px 1px rgba(0,0,0,.28)); }
+.cr-index .cr-ix.on .cr-gem {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.6) 0%, rgba(255,255,255,.12) 46%, rgba(0,0,0,.12) 54%, rgba(255,255,255,.3) 100%) padding-box,
+    linear-gradient(135deg, var(--g1) 0%, var(--g2) 32%, var(--g3) 56%, var(--g2) 78%, var(--g1) 100%) padding-box,
+    linear-gradient(135deg, #fff6d8 0%, #f2c96a 18%, #8a6414 34%, #fff3cc 50%, #c9952e 66%, #fff 82%, #d8ae52 100%) border-box !important;
+  border-width: 2.2px; box-shadow: inset 0 1.5px 0 #fff, inset 0 -2px 4px rgba(0,0,0,.25), 0 0 0 2.5px rgba(255,255,255,.7), 0 0 18px 0 var(--gl) !important;
+}
+.cr-index .cr-ix.on { background: linear-gradient(135deg, rgba(255,62,165,.16), rgba(185,140,255,.16)) !important; box-shadow: inset 0 0 0 1.5px rgba(255,62,165,.5), 0 0 16px -6px rgba(255,62,165,.6); }
+/* son açılanlar çiplerinde simge de renkli */
+.cr-recent-row .chip svg { stroke: url(#cr-ic) #B0246F; }
